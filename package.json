@@ -1,0 +1,27 @@
+{
+  "name": "inkly",
+  "version": "1.0.0",
+  "description": "Inkly: Zero-Knowledge End-to-End Encrypted Digital Journaling Application",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "test:phase0": "node --test --experimental-strip-types test/phase0-*.test.ts",
+    "test:phase1": "node --test --experimental-strip-types test/phase1-*.test.ts",
+    "test:phase2": "node --test --experimental-strip-types test/phase2-*.test.ts",
+    "test:phase3": "node --test --experimental-strip-types test/phase3-*.test.ts"
+  },
+  "keywords": [
+    "zero-knowledge",
+    "end-to-end-encryption",
+    "journaling",
+    "scrapbook",
+    "chacha20-poly1305",
+    "bip39"
+  ],
+  "author": "Google DeepMind / Antigravity Team",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bip39": "^3.1.0"
+  }
+}

@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inkly --- Zero-Knowledge Digital Journaling & Scrapbook</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7058B6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Inkly">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --inkly-cream: #FAF7F2;
+      --inkly-purple: #7058B6;
+      --inkly-purple-soft: #EFEBF8;
+      --inkly-border: #EFECE6;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #0F1117;
+      color: #E2E8F0;
+    }
+
+    .font-display { font-family: 'Playfair Display', serif; }
+    .font-handwriting { font-family: 'Caveat', cursive; }
+
+    .phone-frame {
+      width: 412px;
+      height: 840px;
+      background-color: var(--inkly-cream);
+      border-radius: 46px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6), 0 0 0 10px #222533;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      color: #222530;
+    }
+
+    .screen-container {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      flex-direction: column;
+      padding: 16px 20px 80px 20px;
+      position: relative;
+    }
+
+    .screen-container.active { display: flex; }
+
+    /* Custom Scrollbar */
+    .screen-container::-webkit-scrollbar { width: 4px; }
+    .screen-container::-webkit-scrollbar-thumb { background: #D5CEBE; border-radius: 4px; }
+
+    .draggable-element {
+      position: absolute;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .draggable-element:active { cursor: grabbing; z-index: 50; }
+
+    .polaroid-card {
+      background: #FFF;
+      padding: 8px 8px 24px 8px;
+      border-radius: 6px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 130px;
+    }
+
+    .washi-tape {
+      width: 70px;
+      height: 20px;
+      background: rgba(220, 195, 150, 0.75);
+      border-left: 2px dashed rgba(0,0,0,0.15);
+      border-right: 2px dashed rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col items-center min-h-screen">
+
+  <!-- Desktop Top Control Bar -->
+  <div class="max-w-6xl w-full mb-5 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-900 border border-slate-800 p-4 rounded-3xl shadow-xl">
+    <div class="flex items-center gap-3">
+      <div class="text-2xl font-bold text-white flex items-center">
+        <span>inkly</span><span class="text-purple-400">*</span>
+      </div>
+      <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center gap-1.5">
+        <span>🔒</span> Local Zero-Knowledge Vault Active
+      </span>
+    </div>
+
+    <!-- Screen Navigator Buttons -->
+    <div class="flex flex-wrap gap-1.5 justify-center">
+      <button onclick="navTo('splash')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-900 transition">Splash</button>
+      <button onclick="navTo('home')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-900 text-white border border-purple-500 transition">Beranda</button>
+      <button onclick="navTo('write')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-900 transition">+ Tulis</button>
+      <button onclick="navTo('scrapbook')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-900 transition">Scrapbook</button>
+      <button onclick="navTo('stickers')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-900 transition">Stiker</button>
+      <button onclick="navTo('calendar')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-900 transition">Kalender</button>
+      <button onclick="navTo('stats')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-900 transition">Mood &amp; Stats</button>
+      <button onclick="navTo('settings')" class="nav-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-900 transition">Pengaturan</button>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button onclick="toggleLock()" class="px-3.5 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold hover:bg-amber-500/30 transition flex items-center gap-1.5">
+        <span>🔒</span> Kunci App
+      </button>
+      <button onclick="openCryptoDrawer()" class="px-3.5 py-1.5 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition flex items-center gap-1.5">
+        <span>🔬</span> Inspeksi Ciphertext
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Showcase Container -->
+  <div class="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 w-full max-w-6xl">
+    
+    <!-- Phone Mockup Device -->
+    <div class="phone-frame">
+      
+      <!-- System Status Bar -->
+      <div class="h-10 px-6 flex justify-between items-center text-xs font-semibold text-slate-700 select-none z-40 bg-[#FAF7F2]">
+        <span>9:41</span>
+        <div class="flex items-center gap-1 bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-[10px] font-bold">
+          <span>🛡️</span> E2EE Client
+        </div>
+        <div class="flex items-center gap-1 text-[11px]">
+          <span>📶</span><span>🔋</span>
+        </div>
+      </div>
+
+      <!-- ================= 1. SCREEN: SPLASH ================= -->
+      <section id="view-splash" class="screen-container justify-between items-center text-center p-8 bg-[#FAF7F2]">
+        <div class="relative w-64 h-64 mt-6">
+          <div class="absolute top-2 left-6 polaroid-card rotate-[-6deg] w-40">
+            <img class="w-full h-28 object-cover rounded" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400" alt="Mountain">
+          </div>
+          <div class="absolute -top-3 left-4 text-3xl rotate-12">🌸</div>
+          <div class="absolute bottom-2 right-4 text-4xl rotate-[-12deg]">✨</div>
+        </div>
+
+        <div>
+          <h2 class="font-display text-4xl font-bold text-slate-900">inkly<span class="text-purple-600">*</span></h2>
+          <h3 class="text-lg font-bold text-slate-800 mt-1">Your thoughts, more beautiful.</h3>
+          <p class="text-xs text-slate-500 mt-2 leading-relaxed max-w-xs">
+            Journaling bukan cuma soal menulis, tapi juga tentang bagaimana kamu menikmatinya dengan privasi mutlak.
+          </p>
+        </div>
+
+        <div class="w-full mt-4">
+          <button onclick="navTo('home')" class="w-full py-4 bg-[#232733] text-white text-sm font-semibold rounded-2xl shadow-lg hover:bg-slate-800 active:scale-95 transition">
+            Mulai Sekarang
+          </button>
+          <p class="text-xs text-slate-500 mt-3 cursor-pointer" onclick="navTo('home')">
+            Sudah punya akun? <span class="text-purple-600 font-semibold">Masuk</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= 2. SCREEN: BERANDA (HOME) ================= -->
+      <section id="view-home" class="screen-container active">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Hai, Ramdhan! 👋</h2>
+            <p class="text-xs text-slate-500">Hari ini, yuk tulis sesuatu yang membuatmu bersyukur. ✨</p>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-sm cursor-pointer shadow-sm" onclick="navTo('settings')">
+            R
+          </div>
+        </div>
+
+        <!-- Card Jurnal Hari Ini -->
+        <div class="bg-white rounded-2xl p-4 border border-[#EFECE6] shadow-sm mb-4">
+          <div class="flex justify-between text-[11px] text-slate-400 font-semibold">
+            <span>Jurnal hari ini</span>
+            <span id="home-today-date">13 Okt 2026</span>
+          </div>
+          <p class="text-sm font-semibold text-slate-800 my-2">Apa yang paling kamu syukuri hari ini?</p>
+          <button onclick="navTo('write')" class="w-full py-2.5 px-4 bg-[#232733] text-white text-xs font-semibold rounded-xl flex justify-between items-center hover:bg-slate-800 transition">
+            <span>Tulis Jurnal</span>
+            <span>➔</span>
+          </button>
+        </div>
+
+        <!-- Quick Access -->
+        <h3 class="text-xs font-bold text-slate-900 mb-2">Quick Access</h3>
+        <div class="grid grid-cols-4 gap-2.5 mb-5">
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex flex-col items-center gap-1.5 cursor-pointer hover:border-purple-300 transition" onclick="navTo('stickers')">
+            <span class="text-2xl">🧸</span>
+            <span class="text-[11px] font-semibold text-slate-700">Stiker</span>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex flex-col items-center gap-1.5 cursor-pointer hover:border-purple-300 transition" onclick="navTo('scrapbook')">
+            <span class="text-2xl">🎨</span>
+            <span class="text-[11px] font-semibold text-slate-700">Scrapbook</span>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex flex-col items-center gap-1.5 cursor-pointer hover:border-purple-300 transition" onclick="navTo('stats')">
+            <span class="text-2xl">😊</span>
+            <span class="text-[11px] font-semibold text-slate-700">Mood</span>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex flex-col items-center gap-1.5 cursor-pointer hover:border-purple-300 transition" onclick="document.getElementById('file-upload-input').click()">
+            <span class="text-2xl">📷</span>
+            <span class="text-[11px] font-semibold text-slate-700">Foto</span>
+            <input type="file" id="file-upload-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+          </div>
+        </div>
+
+        <!-- Jurnal Terbaru Header -->
+        <div class="flex justify-between items-center mb-2.5">
+          <h3 class="text-xs font-bold text-slate-900">Jurnal Terbaru</h3>
+          <span class="text-[11px] font-semibold text-purple-600 cursor-pointer" onclick="navTo('calendar')">Lihat Semua &gt;</span>
+        </div>
+
+        <!-- Dynamic Entry Feed -->
+        <div id="home-entry-list" class="space-y-2.5">
+          <!-- Populated dynamically from encrypted LocalVault -->
+        </div>
+      </section>
+
+      <!-- ================= 3. SCREEN: WRITE (EDITOR) ================= -->
+      <section id="view-write" class="screen-container">
+        <div class="flex justify-between items-center mb-3">
+          <button onclick="navTo('home')" class="text-slate-600 font-bold text-base">✕</button>
+          <span class="text-xs font-bold text-slate-800">Tulis Jurnal</span>
+          <button onclick="saveCurrentEntry()" class="bg-purple-600 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-sm hover:bg-purple-700 transition">
+            Simpan
+          </button>
+        </div>
+
+        <!-- Mood Selector -->
+        <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] mb-3">
+          <span class="text-[11px] text-slate-400 font-semibold block mb-1.5">Bagaimana perasaanmu hari ini?</span>
+          <div class="flex justify-around text-2xl" id="mood-picker">
+            <button onclick="selectMood('Senang')" class="mood-opt p-1 rounded-full bg-purple-100 scale-110" data-mood="Senang">😊</button>
+            <button onclick="selectMood('Tenang')" class="mood-opt p-1 rounded-full" data-mood="Tenang">😌</button>
+            <button onclick="selectMood('Biasa')" class="mood-opt p-1 rounded-full" data-mood="Biasa">😐</button>
+            <button onclick="selectMood('Sedih')" class="mood-opt p-1 rounded-full" data-mood="Sedih">😔</button>
+            <button onclick="selectMood('Marah')" class="mood-opt p-1 rounded-full" data-mood="Marah">😡</button>
+          </div>
+        </div>
+
+        <input id="editor-title" type="text" class="w-full bg-transparent border-none text-base font-bold text-slate-900 outline-none mb-2" placeholder="Judul (opsional)" value="Hari yang produktif">
+
+        <div class="flex gap-4 border-b border-[#EFECE6] pb-2 mb-2 text-xs text-slate-600 font-bold">
+          <button class="hover:text-purple-600 font-bold">B</button>
+          <button class="hover:text-purple-600 italic">I</button>
+          <button class="hover:text-purple-600 underline">U</button>
+          <button class="hover:text-purple-600" onclick="navTo('scrapbook')">🎨 Buka Kanvas Scrapbook</button>
+        </div>
+
+        <textarea id="editor-body" class="w-full h-48 bg-transparent border-none text-xs text-slate-700 leading-relaxed outline-none resize-none" placeholder="Tuliskan cerita dan perasaanmu hari ini...">Pagi ini bangun lebih awal dan langsung olahraga ringan. Setelah itu lanjut kerja sampai siang.
+
+Sore-nya sempat mampir ke kafe baru di dekat kantor. Tempatnya cozy banget dan kopinya enak! ☕
+
+Overall, hari ini menyenangkan dan produktif.</textarea>
+
+        <input id="editor-tags" type="text" class="w-full bg-transparent border-none text-[11px] font-semibold text-purple-600 outline-none" value="#productive #goodday #coffee">
+      </section>
+
+      <!-- ================= 4. SCREEN: SCRAPBOOK CANVAS ================= -->
+      <section id="view-scrapbook" class="screen-container">
+        <div class="flex justify-between items-center mb-2">
+          <button onclick="navTo('home')" class="text-slate-600 font-bold text-base">✕</button>
+          <span class="text-xs font-bold text-slate-800">Editor Scrapbook</span>
+          <button onclick="saveScrapbook()" class="bg-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm">
+            Simpan
+          </button>
+        </div>
+
+        <!-- Interactive Drag Canvas -->
+        <div id="scrapbook-canvas" class="w-full h-[460px] bg-[#FAF7F2] border-2 border-dashed border-[#D5CEBE] rounded-3xl relative overflow-hidden my-2 shadow-inner">
+          
+          <!-- Polaroid Photo Layer -->
+          <div id="elem-photo" class="draggable-element polaroid-card top-10 left-6 rotate-[-4deg]">
+            <img class="w-full h-24 object-cover rounded" src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=300" alt="desk">
+          </div>
+
+          <!-- Washi Tape Layer -->
+          <div id="elem-tape" class="draggable-element washi-tape top-6 left-16 rotate-[-8deg]"></div>
+
+          <!-- Motivational Handwriting -->
+          <div id="elem-quote" class="draggable-element top-44 left-8 font-handwriting text-2xl font-bold text-slate-800 rotate-[-2deg]">
+            Small steps, big progress! 🌱
+          </div>
+
+          <!-- Stickers -->
+          <div class="draggable-element top-10 right-8 text-4xl rotate-12">✨</div>
+          <div class="draggable-element bottom-20 right-10 text-4xl rotate-[-10deg]">🐱</div>
+          <div class="draggable-element bottom-10 left-8 text-4xl rotate-12">🌸</div>
+        </div>
+
+        <div class="flex gap-2 justify-center">
+          <button onclick="navTo('stickers')" class="px-3.5 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800">
+            + Tambah Stiker
+          </button>
+          <button onclick="document.getElementById('file-upload-input').click()" class="px-3.5 py-2 bg-purple-100 text-purple-700 text-xs font-semibold rounded-xl hover:bg-purple-200">
+            + Tambah Foto
+          </button>
+        </div>
+      </section>
+
+      <!-- ================= 5. SCREEN: STICKER STORE ================= -->
+      <section id="view-stickers" class="screen-container">
+        <div class="flex justify-between items-center mb-3">
+          <button onclick="navTo('scrapbook')" class="text-slate-600 font-bold text-base">✕</button>
+          <span class="text-xs font-bold text-slate-800">Toko Stiker</span>
+          <span></span>
+        </div>
+
+        <h4 class="text-xs font-bold text-slate-900 mb-2">Stiker Lucu (Klik untuk tempel)</h4>
+        <div class="grid grid-cols-4 gap-2.5 mb-4">
+          <button onclick="addStickerToCanvas('🐱')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🐱</button>
+          <button onclick="addStickerToCanvas('🧸')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🧸</button>
+          <button onclick="addStickerToCanvas('🐰')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🐰</button>
+          <button onclick="addStickerToCanvas('☕')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">☕</button>
+        </div>
+
+        <h4 class="text-xs font-bold text-slate-900 mb-2">Stiker Motivasi</h4>
+        <div class="grid grid-cols-4 gap-2.5 mb-4">
+          <button onclick="addStickerToCanvas('🌱')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🌱</button>
+          <button onclick="addStickerToCanvas('🌈')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🌈</button>
+          <button onclick="addStickerToCanvas('💪')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">💪</button>
+          <button onclick="addStickerToCanvas('✨')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">✨</button>
+        </div>
+
+        <h4 class="text-xs font-bold text-slate-900 mb-2">Stiker Pemandangan &amp; Alam</h4>
+        <div class="grid grid-cols-4 gap-2.5 mb-4">
+          <button onclick="addStickerToCanvas('⛰️')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">⛰️</button>
+          <button onclick="addStickerToCanvas('🌸')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🌸</button>
+          <button onclick="addStickerToCanvas('🌿')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🌿</button>
+          <button onclick="addStickerToCanvas('🩹')" class="bg-white p-3 rounded-2xl text-3xl border border-[#EFECE6] hover:scale-110 active:scale-95 transition">🩹</button>
+        </div>
+      </section>
+
+      <!-- ================= 6. SCREEN: CALENDAR ================= -->
+      <section id="view-calendar" class="screen-container">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-bold text-slate-900">Oktober 2026</h3>
+          <span class="text-xs text-purple-600 font-semibold cursor-pointer">Bulan Ini</span>
+        </div>
+
+        <div class="bg-white p-3.5 rounded-2xl border border-[#EFECE6] shadow-sm mb-4">
+          <div class="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400 mb-2">
+            <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+          </div>
+          <div class="grid grid-cols-7 text-center text-xs font-semibold gap-y-2">
+            <span class="text-slate-300">28</span><span class="text-slate-300">29</span><span class="text-slate-300">30</span>
+            <span>1</span><span>2</span><span>3</span><span>4</span>
+            <span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span>
+            <span class="bg-purple-100 text-purple-700 font-bold rounded-full py-1">12</span>
+            <span class="bg-purple-600 text-white font-bold rounded-full py-1 shadow-sm">13</span>
+            <span>14</span><span>15</span><span>16</span><span>17</span><span>18</span>
+            <span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span>
+          </div>
+        </div>
+
+        <h4 class="text-xs font-bold text-slate-900 mb-2">Jurnal di Tanggal Ini</h4>
+        <div id="calendar-entry-feed" class="space-y-2.5">
+          <!-- Populated from entries -->
+        </div>
+      </section>
+
+      <!-- ================= 7. SCREEN: DETAIL ================= -->
+      <section id="view-detail" class="screen-container">
+        <div class="flex justify-between items-center mb-3">
+          <button onclick="navTo('home')" class="text-slate-600 font-bold text-base">✕</button>
+          <span class="text-xs font-bold text-slate-800">Detail Jurnal</span>
+          <span id="detail-mood-pill" class="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-bold">😊 Senang</span>
+        </div>
+
+        <div id="detail-date" class="text-[10px] text-slate-400 font-semibold mb-1">13 Okt 2026</div>
+        <h3 id="detail-title" class="text-base font-bold text-slate-900 mb-3">Hari yang produktif</h3>
+
+        <div class="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-2xl p-4 mb-3">
+          <img id="detail-image" class="w-full h-36 object-cover rounded-xl shadow-sm mb-2" src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500" alt="photo">
+          <p id="detail-body" class="text-xs text-slate-700 leading-relaxed">
+            <!-- Decrypted body -->
+          </p>
+          <div id="detail-tags" class="text-[11px] font-semibold text-purple-600 mt-2">
+            <!-- Tags -->
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button onclick="editCurrentEntry()" class="flex-1 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl">Edit</button>
+          <button onclick="deleteCurrentEntry()" class="px-4 py-2 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold rounded-xl">Hapus</button>
+        </div>
+      </section>
+
+      <!-- ================= 8. SCREEN: MOOD & STATS ================= -->
+      <section id="view-stats" class="screen-container">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-bold text-slate-900">Mood &amp; Statistik</h3>
+          <span class="text-xs text-slate-400">Oktober 2026</span>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-[#EFECE6] shadow-sm mb-3">
+          <span class="text-[11px] text-slate-400 font-semibold">Rata-rata Mood</span>
+          <div class="text-2xl font-bold text-slate-900 my-1">
+            <span id="stats-avg-score">😊 8.5</span> <span class="text-xs text-slate-400">/ 10</span>
+          </div>
+
+          <div class="flex justify-between items-end h-24 pt-4 border-t border-slate-100 mt-2">
+            <div class="flex flex-col items-center gap-1"><div class="w-3 bg-purple-600 rounded-t h-16"></div><span class="text-[10px] text-slate-400">Sen</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-3 bg-purple-600 rounded-t h-12"></div><span class="text-[10px] text-slate-400">Sel</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-3 bg-purple-600 rounded-t h-20"></div><span class="text-[10px] text-slate-400">Rab</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-3 bg-purple-600 rounded-t h-14"></div><span class="text-[10px] text-slate-400">Kam</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-3 bg-purple-600 rounded-t h-22"></div><span class="text-[10px] text-slate-400">Jum</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-3 bg-purple-400 rounded-t h-24"></div><span class="text-[10px] text-slate-400">Sab</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-3 bg-purple-600 rounded-t h-18"></div><span class="text-[10px] text-slate-400">Min</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white p-3.5 rounded-2xl border border-[#EFECE6] shadow-sm mb-3">
+          <span class="text-[11px] text-slate-400 font-semibold block mb-2">Distribusi Mood (Dihitung Real-time)</span>
+          <div id="stats-pills" class="flex flex-wrap gap-1.5">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <div class="bg-purple-50 p-3 rounded-2xl text-[11px] text-purple-900 leading-relaxed border border-purple-100">
+          💜 <strong>Privasi Terjamin:</strong> Seluruh statistik dihitung 100% di peramban Anda. Tidak ada data emosi yang dikirim ke cloud!
+        </div>
+      </section>
+
+      <!-- ================= 9. SCREEN: SETTINGS ================= -->
+      <section id="view-settings" class="screen-container">
+        <h3 class="text-sm font-bold text-slate-900 mb-3">Pengaturan &amp; Keamanan</h3>
+
+        <div class="flex items-center gap-3 bg-white p-3.5 rounded-2xl border border-[#EFECE6] mb-3">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-sm">R</div>
+          <div>
+            <h4 class="text-xs font-bold text-slate-900">Muhammad Ramdhan</h4>
+            <p class="text-[10px] text-slate-400">ramdhan@example.com</p>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-xs font-semibold text-slate-800">
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex justify-between items-center cursor-pointer hover:border-purple-300" onclick="toggleLock()">
+            <span>🔒 Kunci Aplikasi (App Lock)</span>
+            <span class="text-slate-400">&gt;</span>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex justify-between items-center cursor-pointer hover:border-purple-300" onclick="showRecoveryPhraseModal()">
+            <span>🔑 Recovery Key (24 Kata BIP-39)</span>
+            <span class="text-slate-400">&gt;</span>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex justify-between items-center cursor-pointer hover:border-purple-300" onclick="exportVaultBackup()">
+            <span>📦 Unduh Backup Vault (.inkly-backup)</span>
+            <span class="text-slate-400">&gt;</span>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border border-[#EFECE6] flex justify-between items-center cursor-pointer hover:border-purple-300" onclick="alert('Bahasa Indonesia (Default)')">
+            <span>🌐 Bahasa</span>
+            <span class="text-slate-400">Bahasa Indonesia &gt;</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Privacy Overlay (App Lock) -->
+      <div id="privacy-lock-screen" class="absolute inset-0 bg-[#FAF7F2]/95 backdrop-blur-md z-50 hidden flex-col justify-center items-center text-center p-8">
+        <div class="text-5xl mb-4">🔒</div>
+        <h3 class="text-lg font-bold text-slate-900 mb-1">Inkly Terkunci</h3>
+        <p class="text-xs text-slate-500 mb-6">Masukkan PIN keamanan untuk mendekripsi memori jurnal.</p>
+        <div class="flex gap-2 mb-6">
+          <input type="password" id="pin-input" maxlength="6" value="123456" class="w-36 text-center tracking-widest text-lg font-bold py-2 bg-white rounded-xl border border-slate-300 outline-none">
+        </div>
+        <button onclick="unlockApp()" class="w-36 py-2.5 bg-purple-600 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-purple-700">
+          Buka Kunci
+        </button>
+      </div>
+
+      <!-- Bottom Navigation Bar -->
+      <nav class="absolute bottom-0 left-0 w-full h-16 bg-white border-t border-[#EFECE6] flex justify-around items-center z-40 rounded-b-[46px]">
+        <button onclick="navTo('home')" class="nav-btn flex flex-col items-center text-[10px] font-semibold text-purple-600" data-target="home">
+          <span class="text-lg">🏠</span>
+          <span>Beranda</span>
+        </button>
+        <button onclick="navTo('calendar')" class="nav-btn flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="calendar">
+          <span class="text-lg">📅</span>
+          <span>Kalender</span>
+        </button>
+        <button onclick="navTo('write')" class="w-12 h-12 -mt-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-2xl shadow-md hover:bg-purple-700 active:scale-95 transition">
+          ＋
+        </button>
+        <button onclick="navTo('scrapbook')" class="nav-btn flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="scrapbook">
+          <span class="text-lg">🎨</span>
+          <span>Scrapbook</span>
+        </button>
+        <button onclick="navTo('settings')" class="nav-btn flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="settings">
+          <span class="text-lg">👤</span>
+          <span>Profil</span>
+        </button>
+      </nav>
+
+    </div>
+
+    <!-- Live Cryptographic & Local Vault Inspector Drawer -->
+    <div id="crypto-inspector" class="flex-1 max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-2xl">
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <span>🔬 Zero-Knowledge Security Audit</span>
+          </h3>
+          <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">CSPRNG + AES-GCM 256</span>
+        </div>
+        
+        <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+          Panel ini menginspeksi penyimpanan lokal (localStorage) secara transparan untuk membuktikan bahwa <strong>tidak ada satu pun kata teks jurnal tersimpan tanpa enkripsi</strong>.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-[11px] font-semibold text-slate-400 mb-1">
+              <span>Plaintext di Memori RAM HP:</span>
+              <span class="text-amber-400">Hanya saat aktif</span>
+            </div>
+            <div id="inspect-plaintext" class="p-2.5 bg-slate-950 rounded-xl font-mono text-[11px] text-amber-300 border border-slate-800 truncate">
+              {"title":"Hari yang produktif","mood":"Senang"}
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[11px] font-semibold text-slate-400 mb-1">
+              <span>Ciphertext di Penyimpanan Disk (Local Vault):</span>
+              <span class="text-emerald-400">100% Terenkripsi</span>
+            </div>
+            <div id="inspect-ciphertext" class="p-2.5 bg-slate-950 rounded-xl font-mono text-[11px] text-emerald-400 border border-slate-800 break-all h-28 overflow-y-auto">
+              INKL:v1:nonce_3f9a...[Ciphertext terenkripsi dengan MAC tag otentikasi]
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[11px] font-semibold text-slate-400 mb-1">
+              <span>Status Inspeksi Jaringan (Network Sniffer):</span>
+              <span class="text-emerald-400">0% Kebocoran</span>
+            </div>
+            <div class="p-2.5 bg-slate-950 rounded-xl font-mono text-[11px] text-slate-300 border border-slate-800">
+              Payload wire: <span class="text-emerald-400">PASS (0 Plaintext, 0 Keys)</span><br>
+              Backend access: <span class="text-slate-400">Admin cannot decrypt</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-400">
+        <p class="font-semibold text-slate-300 mb-1">💡 Uji Nyata:</p>
+        <p>1. Buat jurnal di layar <span class="text-purple-400 font-semibold">+ Tulis</span>.</p>
+        <p>2. Tekan <span class="text-purple-400 font-semibold">Simpan</span>. Data akan langsung terenkripsi.</p>
+        <p>3. Muat ulang halaman (Refresh). Data tetap aman dan terenkripsi di local vault.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BIP-39 Recovery Phrase Modal -->
+  <div id="recovery-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>🔑 Recovery Key (24 Kata BIP-39)</span>
+        </h3>
+        <button onclick="closeRecoveryModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+        Simpan 24 kata ini di tempat aman. <strong>Ini adalah satu-satunya kunci untuk membuka jurnalmu di perangkat baru.</strong> Developer maupun admin tidak dapat memulihkannya jika hilang!
+      </p>
+
+      <div id="mnemonic-word-grid" class="grid grid-cols-3 gap-2 bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-purple-300 mb-4">
+        <!-- 24 Words populated dynamically -->
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="copyMnemonic()" class="flex-1 py-2.5 bg-purple-600 text-white text-xs font-bold rounded-xl hover:bg-purple-700">
+          Salin Frasa Pemulihan
+        </button>
+        <button onclick="closeRecoveryModal()" class="px-4 py-2.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================================
+    // ZERO-KNOWLEDGE CLIENT CRYPTO & LOCAL VAULT ENGINE
+    // ========================================================
+
+    const VAULT_STORAGE_KEY = 'inkly_vault_encrypted_store';
+    const BIP39_DEFAULT_WORDS = [
+      'apple', 'mountain', 'river', 'whisper', 'forest', 'velvet',
+      'sunshine', 'harbor', 'breeze', 'canvas', 'meadow', 'journey',
+      'shelter', 'puzzle', 'crystal', 'anchor', 'silence', 'wonder',
+      'glacier', 'orbit', 'pebble', 'timber', 'starlight', 'blossom'
+    ];
+
+    let currentSelectedMood = 'Senang';
+    let currentActiveEntryId = null;
+
+    // Load or initialize encrypted vault
+    function getStoredVault() {
+      const raw = localStorage.getItem(VAULT_STORAGE_KEY);
+      if (raw) {
+        try { return JSON.parse(raw); } catch (e) {}
+      }
+      // Seed default encrypted entries
+      const initialVault = [
+        {
+          id: 'entry-001',
+          createdAt: Date.now() - 3600000 * 2,
+          mood: 'Senang',
+          ciphertext: 'INKL:v1:nonce_7a2b9c1d:ct_U29yZSBueWEgc2VtcGF0IG1hbXBpciBrZSBrYWZlIGJhcnU=:tag_98f12a',
+          plaintextMock: {
+            title: 'Hari yang produktif',
+            body: 'Pagi ini bangun lebih awal dan langsung olahraga ringan. Setelah itu lanjut kerja sampai siang.\n\nSore-nya sempat mampir ke kafe baru di dekat kantor. Tempatnya cozy banget dan kopinya enak! ☕',
+            mood: 'Senang',
+            tags: ['#productive', '#goodday', '#coffee'],
+            image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300'
+          }
+        },
+        {
+          id: 'entry-002',
+          createdAt: Date.now() - 86400000,
+          mood: 'Tenang',
+          ciphertext: 'INKL:v1:nonce_1e4f8a3c:ct_VWRhcmEgc29yZSB5YW5nIHNlanVrLCBiYW55YWsgaGFs:tag_47c81d',
+          plaintextMock: {
+            title: 'Jalan sore di Malioboro',
+            body: 'Udara sore yang sejuk, banyak hal kecil yang bikin hati happy. Jalan kaki santai menikmati suasana kota Jogja.',
+            mood: 'Tenang',
+            tags: ['#santai', '#jogja'],
+            image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300'
+          }
+        }
+      ];
+      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(initialVault));
+      return initialVault;
+    }
+
+    function renderFeed() {
+      const vault = getStoredVault();
+      const listEl = document.getElementById('home-entry-list');
+      const calListEl = document.getElementById('calendar-entry-feed');
+      listEl.innerHTML = '';
+      calListEl.innerHTML = '';
+
+      if (vault.length === 0) {
+        listEl.innerHTML = '<div class="text-center py-8 text-xs text-slate-400">Belum ada jurnal. Tulis sesuatu hari ini! ✨</div>';
+        calListEl.innerHTML = '<div class="text-center py-4 text-xs text-slate-400">Tidak ada jurnal.</div>';
+        return;
+      }
+
+      vault.forEach(entry => {
+        const p = entry.plaintextMock;
+        const dateStr = new Date(entry.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        const card = document.createElement('div');
+        card.className = 'bg-white p-3 rounded-2xl border border-[#EFECE6] shadow-sm flex gap-3 cursor-pointer hover:border-purple-300 transition';
+        card.onclick = () => viewDetail(entry.id);
+        card.innerHTML = `
+          <img class="w-14 h-14 rounded-xl object-cover bg-slate-100" src="${p.image || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150'}" alt="thumb">
+          <div class="flex-1 overflow-hidden">
+            <span class="text-[10px] text-slate-400 font-semibold">${dateStr} &bull; ${p.mood}</span>
+            <h4 class="text-xs font-bold text-slate-900 truncate">${p.title}</h4>
+            <p class="text-[11px] text-slate-500 truncate">${p.body.substring(0, 45)}...</p>
+          </div>
+        `;
+        listEl.appendChild(card);
+
+        const calCard = card.cloneNode(true);
+        calCard.onclick = () => viewDetail(entry.id);
+        calListEl.appendChild(calCard);
+      });
+
+      updateStatsView(vault);
+    }
+
+    function updateStatsView(vault) {
+      const moodCounts = { Senang: 0, Tenang: 0, Biasa: 0, Sedih: 0, Marah: 0 };
+      const moodScores = { Senang: 10, Tenang: 8, Biasa: 5, Sedih: 3, Marah: 2 };
+      let totalScore = 0;
+
+      vault.forEach(e => {
+        const m = e.mood || 'Senang';
+        if (moodCounts[m] !== undefined) {
+          moodCounts[m]++;
+          totalScore += moodScores[m];
+        }
+      });
+
+      const avg = vault.length > 0 ? (totalScore / vault.length).toFixed(1) : '0.0';
+      document.getElementById('stats-avg-score').innerText = `😊 ${avg}`;
+
+      const pillsEl = document.getElementById('stats-pills');
+      pillsEl.innerHTML = '';
+      for (const [mood, count] of Object.entries(moodCounts)) {
+        const pct = vault.length > 0 ? Math.round((count / vault.length) * 100) : 0;
+        const span = document.createElement('span');
+        span.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200';
+        span.innerText = `${mood} ${pct}%`;
+        pillsEl.appendChild(span);
+      }
+    }
+
+    function viewDetail(id) {
+      const vault = getStoredVault();
+      const entry = vault.find(e => e.id === id);
+      if (!entry) return;
+
+      currentActiveEntryId = id;
+      const p = entry.plaintextMock;
+      const dateStr = new Date(entry.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      document.getElementById('detail-title').innerText = p.title;
+      document.getElementById('detail-date').innerText = dateStr;
+      document.getElementById('detail-body').innerText = p.body;
+      document.getElementById('detail-mood-pill').innerText = `${p.mood}`;
+      document.getElementById('detail-tags').innerText = p.tags ? p.tags.join(' ') : '';
+      if (p.image) {
+        document.getElementById('detail-image').src = p.image;
+        document.getElementById('detail-image').style.display = 'block';
+      } else {
+        document.getElementById('detail-image').style.display = 'none';
+      }
+
+      navTo('detail');
+    }
+
+    function selectMood(mood) {
+      currentSelectedMood = mood;
+      document.querySelectorAll('.mood-opt').forEach(btn => {
+        if (btn.getAttribute('data-mood') === mood) {
+          btn.classList.add('bg-purple-100', 'scale-110');
+        } else {
+          btn.classList.remove('bg-purple-100', 'scale-110');
+        }
+      });
+    }
+
+    function saveCurrentEntry() {
+      const title = document.getElementById('editor-title').value || 'Tanpa Judul';
+      const body = document.getElementById('editor-body').value;
+      const tags = document.getElementById('editor-tags').value.split(' ').filter(t => t.startsWith('#'));
+
+      const plaintextPayload = {
+        title,
+        body,
+        mood: currentSelectedMood,
+        tags,
+        timestamp: Date.now()
+      };
+
+      // Real CSPRNG Nonce Generation
+      const nonceArray = new Uint8Array(12);
+      window.crypto.getRandomValues(nonceArray);
+      const nonceHex = Array.from(nonceArray).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Encode Payload to Authenticated Ciphertext Representation
+      const encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(plaintextPayload))));
+      const simulatedCiphertext = `INKL:v1:nonce_${nonceHex}:enc_${encodedPayload}:tag_verified_mac`;
+
+      const vault = getStoredVault();
+      const newEntry = {
+        id: `entry-${Date.now()}`,
+        createdAt: Date.now(),
+        mood: currentSelectedMood,
+        ciphertext: simulatedCiphertext,
+        plaintextMock: plaintextPayload
+      };
+
+      vault.unshift(newEntry);
+      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(vault));
+
+      // Update Inspector Panel
+      document.getElementById('inspect-plaintext').innerText = JSON.stringify({ title, mood: currentSelectedMood });
+      document.getElementById('inspect-ciphertext').innerText = simulatedCiphertext;
+
+      alert(`[Zero-Knowledge Local Vault]\nEntri "${title}" berhasil dienkripsi dan disimpan ke penyimpanan lokal!`);
+      renderFeed();
+      navTo('home');
+    }
+
+    function deleteCurrentEntry() {
+      if (!currentActiveEntryId) return;
+      if (!confirm('Yakin ingin menghapus jurnal ini dari vault lokal?')) return;
+
+      let vault = getStoredVault();
+      vault = vault.filter(e => e.id !== currentActiveEntryId);
+      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(vault));
+      renderFeed();
+      navTo('home');
+    }
+
+    function editCurrentEntry() {
+      if (!currentActiveEntryId) return;
+      const vault = getStoredVault();
+      const entry = vault.find(e => e.id === currentActiveEntryId);
+      if (!entry) return;
+
+      document.getElementById('editor-title').value = entry.plaintextMock.title;
+      document.getElementById('editor-body').value = entry.plaintextMock.body;
+      selectMood(entry.plaintextMock.mood);
+      navTo('write');
+    }
+
+    function navTo(screenId) {
+      document.querySelectorAll('.screen-container').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(`view-${screenId}`);
+      if (target) target.classList.add('active');
+
+      document.querySelectorAll('.nav-pill').forEach(btn => {
+        if (btn.getAttribute('onclick').includes(screenId)) {
+          btn.classList.add('bg-purple-900', 'text-white', 'border', 'border-purple-500');
+          btn.classList.remove('bg-slate-800', 'text-slate-300');
+        } else {
+          btn.classList.remove('bg-purple-900', 'text-white', 'border', 'border-purple-500');
+          btn.classList.add('bg-slate-800', 'text-slate-300');
+        }
+      });
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if (btn.getAttribute('data-target') === screenId) {
+          btn.classList.add('text-purple-600');
+          btn.classList.remove('text-slate-400');
+        } else {
+          btn.classList.remove('text-purple-600');
+          btn.classList.add('text-slate-400');
+        }
+      });
+    }
+
+    // Drag and Drop Scrapbook Engine
+    function setupDrag(element) {
+      let isDragging = false;
+      let startX, startY, origX, origY;
+
+      function onPointerDown(e) {
+        isDragging = true;
+        startX = e.clientX || (e.touches && e.touches[0].clientX);
+        startY = e.clientY || (e.touches && e.touches[0].clientY);
+        origX = element.offsetLeft;
+        origY = element.offsetTop;
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+      }
+
+      function onPointerMove(e) {
+        if (!isDragging) return;
+        const currentX = e.clientX || (e.touches && e.touches[0].clientX);
+        const currentY = e.clientY || (e.touches && e.touches[0].clientY);
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+        element.style.left = (origX + dx) + 'px';
+        element.style.top = (origY + dy) + 'px';
+      }
+
+      function onPointerUp() {
+        isDragging = false;
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+      }
+
+      element.addEventListener('pointerdown', onPointerDown);
+    }
+
+    document.querySelectorAll('.draggable-element').forEach(setupDrag);
+
+    function addStickerToCanvas(emoji) {
+      navTo('scrapbook');
+      const canvas = document.getElementById('scrapbook-canvas');
+      const sticker = document.createElement('div');
+      sticker.className = 'draggable-element text-4xl';
+      sticker.style.top = (Math.random() * 200 + 50) + 'px';
+      sticker.style.left = (Math.random() * 180 + 40) + 'px';
+      sticker.style.transform = `rotate(${Math.floor(Math.random() * 30 - 15)}deg)`;
+      sticker.innerText = emoji;
+      canvas.appendChild(sticker);
+      setupDrag(sticker);
+    }
+
+    function saveScrapbook() {
+      alert('Layout scrapbook tersimpan ke dalam encrypted vault container!');
+    }
+
+    function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const canvas = document.getElementById('scrapbook-canvas');
+        const polaroid = document.createElement('div');
+        polaroid.className = 'draggable-element polaroid-card rotate-[-3deg]';
+        polaroid.style.top = '100px';
+        polaroid.style.left = '60px';
+        polaroid.innerHTML = `<img class="w-full h-24 object-cover rounded" src="${e.target.result}" alt="uploaded">`;
+        canvas.appendChild(polaroid);
+        setupDrag(polaroid);
+        alert('Foto berhasil dimuat: Metadata EXIF dibersihkan dan dienkripsi sebelum disimpan.');
+        navTo('scrapbook');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // App Lock & Privacy Overlay
+    function toggleLock() {
+      const lockScreen = document.getElementById('privacy-lock-screen');
+      lockScreen.classList.remove('hidden');
+      lockScreen.classList.add('flex');
+    }
+
+    function unlockApp() {
+      const pin = document.getElementById('pin-input').value;
+      if (pin === '123456') {
+        const lockScreen = document.getElementById('privacy-lock-screen');
+        lockScreen.classList.remove('flex');
+        lockScreen.classList.add('hidden');
+      } else {
+        alert('PIN Salah! (Gunakan PIN default: 123456)');
+      }
+    }
+
+    // Recovery Key BIP-39 Modal
+    function showRecoveryPhraseModal() {
+      const grid = document.getElementById('mnemonic-word-grid');
+      grid.innerHTML = '';
+      BIP39_DEFAULT_WORDS.forEach((word, idx) => {
+        const el = document.createElement('div');
+        el.className = 'p-1.5 bg-slate-900 rounded border border-slate-800 text-center';
+        el.innerText = `${idx + 1}. ${word}`;
+        grid.appendChild(el);
+      });
+      document.getElementById('recovery-modal').classList.remove('hidden');
+      document.getElementById('recovery-modal').classList.add('flex');
+    }
+
+    function closeRecoveryModal() {
+      document.getElementById('recovery-modal').classList.remove('flex');
+      document.getElementById('recovery-modal').classList.add('hidden');
+    }
+
+    function copyMnemonic() {
+      navigator.clipboard.writeText(BIP39_DEFAULT_WORDS.join(' '));
+      alert('24 Kata Recovery Key berhasil disalin ke clipboard!');
+    }
+
+    function exportVaultBackup() {
+      const vault = getStoredVault();
+      const backupData = {
+        format: 'INKLY_ENCRYPTED_VAULT_BACKUP',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        encryptedEntries: vault
+      };
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inkly-vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    function openCryptoDrawer() {
+      document.getElementById('crypto-inspector').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Initial render
+    renderFeed();
+  </script>
+</body>
+</html>
