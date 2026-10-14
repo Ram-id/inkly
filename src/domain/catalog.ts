@@ -6,18 +6,24 @@ export interface Mood {
   emoji: string;
   /** 1 (berat) … 5 (sangat baik) — used for the trend chart */
   score: number;
-  color: string;
+  /** pastel paper colour of this feeling in the bottle */
+  paper: string;
+  /** deeper shade for the rolled edge, dots and small marks */
+  edge: string;
+  /** short line shown under the colour in the bottle */
+  hint: string;
 }
 
+/** Paper colours. Identity is always also given by the label, never by colour alone. */
 export const MOODS: Mood[] = [
-  { id: 'senang', label: 'Senang', emoji: '😊', score: 5, color: '#F2B544' },
-  { id: 'semangat', label: 'Semangat', emoji: '🤩', score: 5, color: '#EE8B5A' },
-  { id: 'tenang', label: 'Tenang', emoji: '😌', score: 4, color: '#6BB592' },
-  { id: 'biasa', label: 'Biasa', emoji: '😐', score: 3, color: '#9C9AA8' },
-  { id: 'lelah', label: 'Lelah', emoji: '😮‍💨', score: 2, color: '#8C7BC4' },
-  { id: 'cemas', label: 'Cemas', emoji: '😟', score: 2, color: '#C98BB8' },
-  { id: 'sedih', label: 'Sedih', emoji: '😢', score: 1, color: '#5B8FD0' },
-  { id: 'marah', label: 'Marah', emoji: '😠', score: 1, color: '#D9625B' }
+  { id: 'senang', label: 'Senang', emoji: '😊', score: 5, paper: '#FFE48F', edge: '#E9B91F', hint: 'hati terasa ringan' },
+  { id: 'semangat', label: 'Semangat', emoji: '🤩', score: 5, paper: '#FFC49B', edge: '#EE8340', hint: 'penuh energi' },
+  { id: 'tenang', label: 'Tenang', emoji: '😌', score: 4, paper: '#C3EAD3', edge: '#4FAE7C', hint: 'damai & cukup' },
+  { id: 'rindu', label: 'Rindu', emoji: '🥺', score: 3, paper: '#FAC9DC', edge: '#E06C99', hint: 'kangen seseorang' },
+  { id: 'lelah', label: 'Lelah', emoji: '😮‍💨', score: 2, paper: '#E8DDCB', edge: '#B39468', hint: 'butuh istirahat' },
+  { id: 'cemas', label: 'Cemas', emoji: '😟', score: 2, paper: '#DCCFF6', edge: '#8C6FD6', hint: 'pikiran ramai' },
+  { id: 'sedih', label: 'Sedih', emoji: '😢', score: 1, paper: '#BFD8F7', edge: '#4F86D3', hint: 'hati sedang berat' },
+  { id: 'marah', label: 'Marah', emoji: '😠', score: 1, paper: '#F8B3AC', edge: '#D9534A', hint: 'emosi sedang naik' }
 ];
 
 export const MOOD_BY_ID: Record<MoodId, Mood> = Object.fromEntries(MOODS.map((m) => [m.id, m])) as Record<
@@ -91,44 +97,6 @@ export const TEMPLATES: Template[] = [
     body: 'Hal yang sedang mengganggu pikiranku:\n\nYang bisa aku kendalikan:\n\nYang perlu aku lepaskan:\n'
   }
 ];
-
-export const PROMPTS: string[] = [
-  'Apa yang membuatmu tersenyum hari ini?',
-  'Ceritakan satu hal kecil yang berjalan baik hari ini.',
-  'Apa yang sedang kamu nantikan minggu ini?',
-  'Siapa orang yang membuat harimu lebih ringan belakangan ini?',
-  'Kalau hari ini punya judul film, apa judulnya?',
-  'Apa satu hal yang ingin kamu lepaskan?',
-  'Kapan terakhir kali kamu merasa benar-benar tenang?',
-  'Apa yang kamu pelajari tentang dirimu bulan ini?',
-  'Tulis surat singkat untuk dirimu setahun lagi.',
-  'Apa kebiasaan kecil yang ingin kamu mulai?',
-  'Tempat mana yang membuatmu merasa “pulang”?',
-  'Apa yang akan kamu katakan pada dirimu 5 tahun lalu?',
-  'Lagu apa yang menggambarkan perasaanmu sekarang?',
-  'Apa yang kamu butuhkan tapi belum kamu minta?',
-  'Ceritakan percakapan yang masih kamu pikirkan.',
-  'Apa pencapaian kecil yang belum sempat kamu rayakan?',
-  'Hal apa yang membuatmu penasaran akhir-akhir ini?',
-  'Kalau besok hari libur penuh, apa yang akan kamu lakukan?',
-  'Apa yang membuatmu merasa dihargai?',
-  'Tulis tiga kata yang menggambarkan hari ini, lalu jelaskan.',
-  'Apa ketakutan yang ingin kamu hadapi pelan-pelan?',
-  'Makanan apa yang punya kenangan khusus untukmu?',
-  'Apa yang ingin kamu lakukan lebih sering?',
-  'Kapan kamu terakhir kali tertawa lepas?',
-  'Apa batasan yang ingin kamu jaga untuk dirimu sendiri?',
-  'Tuliskan hal yang kamu banggakan dari dirimu.',
-  'Apa yang sedang kamu syukuri dari tubuhmu hari ini?',
-  'Apa mimpi kecil yang masih kamu simpan?',
-  'Kalau kamu bisa mengulang satu momen hari ini, momen apa itu?',
-  'Apa yang akan membuat besok sedikit lebih baik?'
-];
-
-export function promptOfTheDay(date = new Date()): string {
-  const day = Math.floor(date.getTime() / 86_400_000);
-  return PROMPTS[day % PROMPTS.length];
-}
 
 export interface StickerGroup {
   name: string;

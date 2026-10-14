@@ -9,6 +9,7 @@ import { Home } from './screens/Home';
 import { Editor, TemplateSheet } from './screens/Editor';
 import { EntryView } from './screens/EntryView';
 import { Scrapbook } from './screens/Scrapbook';
+import { Bottle } from './screens/Bottle';
 import { Calendar } from './screens/Calendar';
 import { Stats } from './screens/Stats';
 import { BackupSettings, Privacy, ReminderSettings, SecuritySettings, Settings, SyncSettings } from './screens/Settings';
@@ -143,6 +144,9 @@ function Main() {
     case 'entry':
       screen = <EntryView id={id} />;
       break;
+    case 'bottle':
+      screen = <Bottle />;
+      break;
     case 'scrap':
       screen = <Scrapbook key={id} id={id} />;
       break;
@@ -158,6 +162,10 @@ function Main() {
       {compose && (
         <TemplateSheet
           onClose={() => setCompose(false)}
+          onBottle={() => {
+            setCompose(false);
+            go('bottle');
+          }}
           onPick={(t) => {
             setCompose(false);
             go(t.id === 'bebas' ? 'new' : `new?template=${t.id}`);

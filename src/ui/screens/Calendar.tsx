@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'preact/hooks';
-import { MOOD_BY_ID } from '../../domain/catalog';
+import { MOOD_BY_ID, MOODS } from '../../domain/catalog';
 import { dayKey } from '../../domain/stats';
 import type { Entry } from '../../domain/types';
 import { Icon } from '../icons';
 import { go } from '../router';
 import { useVault } from '../services';
 import { EntryCard } from '../components/common';
+import { PaperRoll } from '../components/Paper';
 
 export function Calendar() {
   const vault = useVault();
@@ -79,12 +80,25 @@ export function Calendar() {
               .filter(Boolean)
               .join(' ');
             return (
-              <button key={k} class={cls} onClick={() => setSelected(k)} aria-label={`${d.getDate()}${list ? `, ${list.length} jurnal` : ''}`}>
+              <button
+                key={k}
+                class={cls}
+                onClick={() => setSelected(k)}
+                aria-label={`${d.getDate()}${list ? `, ${list.length} jurnal` : ''}${mood ? `, ${MOOD_BY_ID[mood].label}` : ''}`}
+              >
                 {d.getDate()}
-                {mood ? <span class="m">{MOOD_BY_ID[mood].emoji}</span> : list ? <span class="m">•</span> : null}
+                {mood ? <PaperRoll emotion={mood} size={0.5} style={{ marginTop: '3px', borderWidth: '1px' }} /> : list ? <span class="m">•</span> : null}
               </button>
             );
           })}
+        </div>
+        <div class="row wrap" style={{ gap: '6px 12px', justifyContent: 'center' }} aria-label="Arti warna kertas">
+          {MOODS.map((m) => (
+            <span key={m.id} class="row tiny muted" style={{ gap: '5px' }}>
+              <PaperRoll emotion={m.id} size={0.5} style={{ borderWidth: '1px' }} />
+              {m.label}
+            </span>
+          ))}
         </div>
       </div>
 

@@ -196,6 +196,7 @@ function sameContent(a: Entry, b: Entry): boolean {
     a.title === b.title &&
     a.body === b.body &&
     a.mood === b.mood &&
+    a.slip?.id === b.slip?.id &&
     a.date === b.date &&
     a.tags.join('|') === b.tags.join('|') &&
     a.photos.map((p) => p.id).join('|') === b.photos.map((p) => p.id).join('|') &&

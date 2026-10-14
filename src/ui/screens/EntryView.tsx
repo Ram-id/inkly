@@ -1,5 +1,4 @@
 import { useState } from 'preact/hooks';
-import { MOOD_BY_ID } from '../../domain/catalog';
 import { wordCount } from '../../domain/stats';
 import { Icon } from '../icons';
 import { back, go } from '../router';
@@ -7,6 +6,7 @@ import { useVault } from '../services';
 import { Empty, SecureImg, TopBar } from '../components/common';
 import { confirmDialog, toast } from '../components/feedback';
 import { ScrapCanvas } from '../components/ScrapCanvas';
+import { SlipCard } from '../components/Paper';
 
 export function EntryView({ id }: { id: string }) {
   const vault = useVault();
@@ -22,7 +22,6 @@ export function EntryView({ id }: { id: string }) {
     );
   }
 
-  const mood = entry.mood ? MOOD_BY_ID[entry.mood] : null;
   const d = new Date(entry.date);
 
   const remove = async () => {
@@ -67,15 +66,12 @@ export function EntryView({ id }: { id: string }) {
             {d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} ·{' '}
             {d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
           </p>
-          <h1 class="serif" style={{ fontSize: '28px', lineHeight: 1.2 }}>
-            {entry.title || 'Tanpa judul'}
-          </h1>
+          {(entry.title || !entry.slip) && (
+            <h1 class="serif" style={{ fontSize: '28px', lineHeight: 1.2 }}>
+              {entry.title || 'Tanpa judul'}
+            </h1>
+          )}
           <div class="row wrap" style={{ gap: '6px' }}>
-            {mood && (
-              <span class="chip">
-                {mood.emoji} {mood.label}
-              </span>
-            )}
             {entry.tags.map((t) => (
               <span key={t} class="chip tag">
                 #{t}
@@ -83,6 +79,8 @@ export function EntryView({ id }: { id: string }) {
             ))}
           </div>
         </div>
+
+        {entry.slip && <SlipCard slip={entry.slip} compact />}
 
         {entry.body && <div class="entry-body">{entry.body}</div>}
 

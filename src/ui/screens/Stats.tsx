@@ -3,6 +3,7 @@ import { MOOD_BY_ID } from '../../domain/catalog';
 import { moodDistribution, moodTrend, streaks, topTags, totals, weekdayCounts, type TrendPoint } from '../../domain/stats';
 import { useVault } from '../services';
 import { Empty } from '../components/common';
+import { PaperRoll } from '../components/Paper';
 
 const LEVELS: { score: number; emoji: string; label: string }[] = [
   { score: 5, emoji: '😊', label: 'Sangat baik' },
@@ -56,19 +57,19 @@ export function Stats() {
       </div>
 
       <section class="card stack">
-        <h2 class="bold">Mood 30 hari terakhir</h2>
+        <h2 class="bold">Perasaan 30 hari terakhir</h2>
         <TrendChart points={trend} />
       </section>
 
       {moods.length > 0 && (
         <section class="card stack">
-          <h2 class="bold">Perasaan yang paling sering</h2>
+          <h2 class="bold">Warna kertas yang paling sering kamu ambil</h2>
           {moods.map((m) => {
             const mood = MOOD_BY_ID[m.id];
             return (
               <div class="bar-row" key={m.id}>
-                <span>
-                  {mood.emoji} {mood.label}
+                <span class="row" style={{ gap: '8px' }}>
+                  <PaperRoll emotion={m.id} size={0.7} /> {mood.label}
                 </span>
                 <div class="bar-track" role="img" aria-label={`${mood.label} ${m.pct} persen`}>
                   <div class="bar-fill" style={{ width: `${Math.max(m.pct, 3)}%` }} />
@@ -124,7 +125,7 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
   const y = (s: number) => PAD.t + ((5 - s) / 4) * (H - PAD.t - PAD.b);
   const path = logged.map((p, n) => `${n ? 'L' : 'M'}${x(p.i).toFixed(1)},${y(p.score!).toFixed(1)}`).join(' ');
 
-  if (!logged.length) return <p class="small muted">Pilih mood saat menulis untuk melihat grafiknya di sini.</p>;
+  if (!logged.length) return <p class="small muted">Ambil kertas dari botol perasaan saat menulis untuk melihat grafiknya di sini.</p>;
 
   const pick = (clientX: number, rect: DOMRect) => {
     const px = ((clientX - rect.left) / rect.width) * W;
@@ -150,7 +151,7 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
           viewBox={`0 0 ${W} ${H}`}
           width="100%"
           role="img"
-          aria-label={`Grafik mood harian, ${logged.length} hari tercatat dalam 30 hari terakhir`}
+          aria-label={`Grafik perasaan harian, ${logged.length} hari tercatat dalam 30 hari terakhir`}
           style={{ display: 'block', touchAction: 'pan-y' }}
           onPointerMove={(e) => pick(e.clientX, e.currentTarget.getBoundingClientRect())}
           onPointerDown={(e) => pick(e.clientX, e.currentTarget.getBoundingClientRect())}

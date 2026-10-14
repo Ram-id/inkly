@@ -1,4 +1,15 @@
-export type MoodId = 'senang' | 'semangat' | 'tenang' | 'biasa' | 'lelah' | 'sedih' | 'cemas' | 'marah';
+/** The feeling behind each paper colour in the bottle. */
+export type MoodId = 'senang' | 'semangat' | 'tenang' | 'rindu' | 'lelah' | 'cemas' | 'sedih' | 'marah';
+
+export type SlipKind = 'afirmasi' | 'pertanyaan' | 'penyemangat' | 'langkah';
+
+/** A rolled paper from the bottle. Copied into the entry so it survives catalogue changes. */
+export interface Slip {
+  id: string;
+  emotion: MoodId;
+  kind: SlipKind;
+  text: string;
+}
 
 export interface Photo {
   id: string;
@@ -40,7 +51,9 @@ export interface Entry {
   updatedAt: number;
   title: string;
   body: string;
+  /** set from the colour of the paper drawn from the bottle */
   mood?: MoodId;
+  slip?: Slip;
   tags: string[];
   photos: Photo[];
   favorite?: boolean;
@@ -50,6 +63,8 @@ export interface Entry {
 
 export interface UserSettings {
   displayName: string;
+  /** recently drawn slip ids, so the bottle does not repeat itself too soon */
+  drawnSlips?: string[];
   reminderTime: string;
   weekStartsMonday: boolean;
 }

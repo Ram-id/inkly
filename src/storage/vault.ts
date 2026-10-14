@@ -416,8 +416,9 @@ export class Vault {
     const lines: string[] = ['# Jurnal Inkly', ''];
     for (const e of this.list()) {
       const d = new Date(e.date).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' });
-      lines.push(`## ${e.title || 'Tanpa judul'}`, `*${d}*${e.mood ? ` · mood: ${e.mood}` : ''}`);
+      lines.push(`## ${e.title || 'Tanpa judul'}`, `*${d}*${e.mood ? ` · perasaan: ${e.mood}` : ''}`);
       if (e.tags.length) lines.push(e.tags.map((t) => `#${t}`).join(' '));
+      if (e.slip) lines.push('', `> ${e.slip.text}`);
       lines.push('', e.body, '');
       if (e.photos.length) lines.push(`_(${e.photos.length} foto tidak disertakan)_`, '');
     }

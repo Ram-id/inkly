@@ -1,12 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { PROMPTS, TEMPLATES, type Template } from '../../domain/catalog';
+import { randomQuestion } from '../../domain/bottle';
+import { TEMPLATES, type Template } from '../../domain/catalog';
+import { SLIPS } from '../../domain/slips';
 import { normalizeTag, wordCount } from '../../domain/stats';
 import { emptyEntry, newId, type Entry } from '../../domain/types';
 import { processPhoto } from '../../media/image';
 import { Icon } from '../icons';
 import { back, go } from '../router';
 import { services } from '../services';
-import { MoodPicker } from '../components/common';
+import { Jar, SlipCard } from '../components/Paper';
 import { Sheet, errorMessage, toast } from '../components/feedback';
 
 const MAX_PHOTOS = 12;
@@ -18,7 +20,7 @@ function toLocalInput(ts: number): string {
 }
 
 function hasContent(e: Entry): boolean {
-  return !!(e.title.trim() || e.body.trim() || e.photos.length || e.mood || e.scrapbook?.items.length);
+  return !!(e.title.trim() || e.body.trim() || e.photos.length || e.scrapbook?.items.length);
 }
 
 export function applyTemplate(e: Entry, t: Template): Entry {
@@ -35,8 +37,8 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
     let e = emptyEntry(date);
     const t = TEMPLATES.find((x) => x.id === query.get('template'));
     if (t) e = applyTemplate(e, t);
-    const p = query.get('prompt');
-    if (p) e = { ...e, title: p, body: '' };
+    const slip = SLIPS.find((s) => s.id === query.get('slip'));
+    if (slip) e = { ...e, slip: { ...slip }, mood: slip.emotion };
     return e;
   });
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>(id ? 'saved' : 'idle');
@@ -171,17 +173,29 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
           />
         </label>
 
-        <div class="stack" style={{ gap: '8px' }}>
-          <span class="section-title">Bagaimana perasaanmu?</span>
-          <MoodPicker value={entry.mood} onChange={(mood) => update({ mood })} />
-        </div>
+        {entry.slip ? (
+          <SlipCard slip={entry.slip} compact />
+        ) : (
+          !id &&
+          !hasContent(entry) && (
+            <button class="card flat row" style={{ gap: '12px', textAlign: 'left', borderStyle: 'dashed' }} onClick={() => go('bottle', { replace: true })}>
+              <Jar size={40} />
+              <span class="grow small">
+                <b>Ambil kertas dari botol perasaan</b>
+                <span class="muted" style={{ display: 'block' }}>
+                  Pilih warna sesuai perasaanmu, lalu tulis dari isi kertasnya.
+                </span>
+              </span>
+            </button>
+          )
+        )}
 
         <div>
           <input class="editor-title" placeholder="Judul" value={entry.title} onInput={(e) => update({ title: e.currentTarget.value })} aria-label="Judul" />
           <textarea
             ref={bodyRef}
             class="editor-body"
-            placeholder="Ceritakan harimu…"
+            placeholder={entry.slip ? 'Tulis apa pun yang muncul setelah membaca kertas ini…' : 'Ceritakan harimu…'}
             value={entry.body}
             onInput={(e) => update({ body: e.currentTarget.value })}
             aria-label="Isi jurnal"
@@ -253,7 +267,7 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
           <button
             class="tool"
             onClick={() => {
-              const p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+              const p = randomQuestion(entry.mood).text;
               update({ body: entry.body.trim() ? `${entry.body.trimEnd()}\n\n${p}\n` : `${p}\n` });
             }}
           >
@@ -278,13 +292,25 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
   );
 }
 
-export function TemplateSheet({ onClose, onPick }: { onClose: () => void; onPick: (t: Template) => void }) {
+export function TemplateSheet({ onClose, onPick, onBottle }: { onClose: () => void; onPick: (t: Template) => void; onBottle?: () => void }) {
   return (
     <Sheet onClose={onClose}>
-      <h2>Mulai dari template</h2>
+      <h2>{onBottle ? 'Mulai menulis' : 'Mulai dari template'}</h2>
       <p class="small muted" style={{ marginBottom: '12px' }}>
         Pilih kerangka tulisan, nanti bisa kamu ubah sesukamu.
       </p>
+      {onBottle && (
+        <button class="card tinted row" style={{ gap: '12px', textAlign: 'left', width: '100%', marginBottom: '12px' }} onClick={onBottle}>
+          <Jar size={44} />
+          <span class="grow">
+            <b>Ambil kertas dari botol</b>
+            <span class="small muted" style={{ display: 'block' }}>
+              Afirmasi, pertanyaan, atau langkah kecil sesuai perasaanmu.
+            </span>
+          </span>
+          <Icon name="next" size={18} />
+        </button>
+      )}
       <div class="list">
         {TEMPLATES.map((t) => (
           <button key={t.id} class="list-item" onClick={() => onPick(t)}>

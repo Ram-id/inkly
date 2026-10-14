@@ -1,10 +1,10 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { MOOD_BY_ID, MOODS } from '../../domain/catalog';
-import type { Entry, MoodId } from '../../domain/types';
+import type { Entry } from '../../domain/types';
 import { Icon, type IconName } from '../icons';
 import { back, go } from '../router';
 import { services } from '../services';
+import { PaperRoll } from './Paper';
 
 export function TopBar({
   title,
@@ -128,45 +128,21 @@ export function StrengthMeter({ pw }: { pw: string }) {
   );
 }
 
-export function MoodPicker({ value, onChange }: { value?: MoodId; onChange: (m: MoodId | undefined) => void }) {
-  return (
-    <div class="mood-row" role="radiogroup" aria-label="Mood">
-      {MOODS.map((m) => (
-        <button
-          key={m.id}
-          role="radio"
-          aria-checked={value === m.id}
-          class={`mood-btn ${value === m.id ? 'on' : ''}`}
-          onClick={() => onChange(value === m.id ? undefined : m.id)}
-        >
-          <span class="e">{m.emoji}</span>
-          {m.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 const WEEKDAY = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 export function EntryCard({ entry }: { entry: Entry }) {
   const d = new Date(entry.date);
-  const mood = entry.mood ? MOOD_BY_ID[entry.mood] : null;
   const snippet = entry.body.replace(/\s+/g, ' ').trim();
   return (
     <button class="entry-card" onClick={() => go(`entry/${entry.id}`)}>
       <div class="date-block">
         <div class="d">{d.getDate()}</div>
         <div class="w">{WEEKDAY[d.getDay()]}</div>
-        {mood && (
-          <div style={{ fontSize: '18px', marginTop: '4px' }} title={mood.label} aria-label={`Mood ${mood.label}`}>
-            {mood.emoji}
-          </div>
-        )}
+        {entry.mood && <PaperRoll emotion={entry.mood} size={0.8} style={{ marginTop: '8px' }} />}
       </div>
       <div class="grow stack" style={{ gap: '3px' }}>
         <div class="row" style={{ gap: '6px' }}>
-          <span class="title grow">{entry.title || 'Tanpa judul'}</span>
+          <span class="title grow">{entry.title || entry.slip?.text || 'Tanpa judul'}</span>
           {entry.favorite && <Icon name="star" size={15} solid style={{ color: 'var(--warn)', flex: 'none' }} />}
         </div>
         {snippet && <p class="snippet">{snippet}</p>}

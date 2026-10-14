@@ -23,6 +23,9 @@
   --good: #2f8a5b;
   --warn: #b7791f;
   --shadow: 0 1px 2px rgba(36, 34, 43, 0.04), 0 6px 20px rgba(36, 34, 43, 0.06);
+  --jar-line: #b9b2c4;
+  --jar-shadow: rgba(36, 34, 43, 0.08);
+  --ink: #2b2633;
   --radius: 18px;
   --radius-sm: 12px;
   --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -53,6 +56,8 @@
     --good: #6cc895;
     --warn: #e2b05d;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+    --jar-line: #8d86a0;
+    --jar-shadow: rgba(0, 0, 0, 0.35);
   }
 }
 :root[data-theme='dark'] {
@@ -74,6 +79,8 @@
   --good: #6cc895;
   --warn: #e2b05d;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+  --jar-line: #8d86a0;
+  --jar-shadow: rgba(0, 0, 0, 0.35);
 }
 
 * {
@@ -734,33 +741,6 @@ button.list-item:active {
   background: var(--surface-2);
 }
 
-.mood-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-.mood-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 2px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-2);
-}
-.mood-btn .e {
-  font-size: 24px;
-  line-height: 1.1;
-}
-.mood-btn.on {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
 
 .editor-title {
   width: 100%;
@@ -1079,7 +1059,7 @@ button.list-item:active {
 }
 .bar-row {
   display: grid;
-  grid-template-columns: 96px 1fr 40px;
+  grid-template-columns: 112px 1fr 40px;
   align-items: center;
   gap: 10px;
   font-size: 13.5px;
@@ -1278,4 +1258,184 @@ button.list-item:active {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---------------------------------------------------------------- feelings bottle */
+
+.paper-roll {
+  display: inline-block;
+  flex: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--paper) 0 78%, color-mix(in srgb, var(--edge) 55%, var(--paper)) 78% 100%);
+  border: 1.5px solid var(--edge);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.06);
+  transform: rotate(-8deg);
+}
+.jar-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding-top: 8px;
+}
+.jar {
+  display: block;
+  max-width: 62vw;
+  height: auto;
+  transform-origin: 50% 90%;
+}
+.jar.shake {
+  animation: jar-shake 0.65s ease-in-out;
+}
+@keyframes jar-shake {
+  15% { transform: rotate(-7deg); }
+  35% { transform: rotate(6deg); }
+  55% { transform: rotate(-5deg); }
+  75% { transform: rotate(3deg); }
+  100% { transform: rotate(0); }
+}
+.rising-roll {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 64px;
+  height: 22px;
+  margin-left: -32px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--paper) 0 80%, color-mix(in srgb, var(--edge) 55%, var(--paper)) 80% 100%);
+  border: 2px solid var(--edge);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  animation: roll-rise 0.85s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+.rising-roll.gone {
+  opacity: 0;
+}
+@keyframes roll-rise {
+  0% { transform: translateY(40px) rotate(20deg) scale(0.6); opacity: 0; }
+  25% { opacity: 1; }
+  70% { transform: translateY(-118px) rotate(-12deg) scale(1.1); }
+  100% { transform: translateY(-96px) rotate(0) scale(1.25); }
+}
+.feel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.feel-btn {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+}
+.feel-btn .paper-roll {
+  grid-row: 1 / span 2;
+}
+.feel-btn:active {
+  transform: scale(0.98);
+}
+.feel-btn.on {
+  border-color: var(--edge);
+  background: color-mix(in srgb, var(--paper) 35%, var(--surface));
+}
+.feel-label {
+  font-weight: 700;
+  font-size: 15px;
+}
+.feel-hint {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.slip-backdrop {
+  align-items: center;
+  padding: 16px;
+}
+.slip-reveal {
+  width: 100%;
+  max-width: 420px;
+  animation: slip-unroll 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  transform-origin: 50% 0;
+}
+@keyframes slip-unroll {
+  0% { transform: scaleY(0.06) scaleX(0.4) rotate(-4deg); opacity: 0.6; }
+  60% { transform: scaleY(1.04) scaleX(1) rotate(1deg); opacity: 1; }
+  100% { transform: none; }
+}
+.slip-card {
+  position: relative;
+  margin: 0;
+  padding: 30px 22px 22px;
+  border-radius: 6px;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(transparent 0 31px, color-mix(in srgb, var(--edge) 22%, transparent) 31px 32px);
+  background-position: 0 14px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+}
+/* curled top and bottom edges of an unrolled paper */
+.slip-card::before,
+.slip-card::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--edge) 45%, var(--paper)), var(--paper) 60%, color-mix(in srgb, var(--edge) 30%, var(--paper)));
+  border: 1.5px solid color-mix(in srgb, var(--edge) 70%, transparent);
+}
+.slip-card::before {
+  top: -7px;
+}
+.slip-card::after {
+  bottom: -7px;
+}
+.slip-kind {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--edge) 70%, var(--ink));
+}
+.slip-text {
+  margin: 10px 0 0;
+  font-family: var(--font-hand);
+  font-weight: 600;
+  font-size: 29px;
+  line-height: 32px;
+  color: var(--ink);
+}
+.slip-card .btn.secondary {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--edge) 40%, transparent);
+}
+.slip-card.compact {
+  padding: 22px 16px 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+.slip-card.compact .slip-text {
+  font-size: 23px;
+  line-height: 28px;
+}
+.bottle-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+}
+.bottle-card .jar {
+  flex: none;
+  max-width: none;
+}
+.cal-day .roll {
+  width: 15px;
+  height: 7px;
+  border-width: 1px;
+  margin-top: 2px;
 }

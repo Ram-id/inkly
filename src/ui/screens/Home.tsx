@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'preact/hooks';
-import { promptOfTheDay } from '../../domain/catalog';
+import { SLIPS } from '../../domain/slips';
 import { onThisDay, searchEntries, streaks, topTags } from '../../domain/stats';
 import { Icon } from '../icons';
 import { go } from '../router';
 import { services, useSync, useVault } from '../services';
 import { Empty, EntryCard, groupByMonth } from '../components/common';
 import { InstallCard } from '../components/InstallCard';
+import { Jar } from '../components/Paper';
 
 function greeting(h: number): string {
   if (h < 4) return 'Selamat malam';
@@ -25,7 +26,6 @@ export function Home() {
   const s = streaks(all);
   const tags = useMemo(() => topTags(all, 6), [vault.version]);
   const memories = useMemo(() => onThisDay(all).slice(0, 2), [vault.version]);
-  const prompt = promptOfTheDay();
   const name = vault.settings.displayName;
 
   let shown = searchEntries(all, query);
@@ -81,13 +81,18 @@ export function Home() {
         </button>
       )}
 
-      <button class="card tinted prompt-card stack" style={{ gap: '6px' }} onClick={() => go(`new?prompt=${encodeURIComponent(prompt)}`)}>
-        <span class="tiny bold" style={{ color: 'var(--accent)', letterSpacing: '0.04em' }}>
-          PERTANYAAN HARI INI
-        </span>
-        <span class="hand">{prompt}</span>
-        <span class="small muted row" style={{ gap: '4px' }}>
-          Jawab sekarang <Icon name="next" size={16} />
+      <button class="card tinted bottle-card" onClick={() => go('bottle')}>
+        <Jar size={78} />
+        <span class="grow stack" style={{ gap: '4px' }}>
+          <span class="tiny bold" style={{ color: 'var(--accent)', letterSpacing: '0.04em' }}>
+            BOTOL PERASAAN
+          </span>
+          <span class="hand" style={{ fontSize: '24px', lineHeight: 1.15, color: 'var(--accent-strong)' }}>
+            Ambil satu kertas sesuai perasaanmu hari ini
+          </span>
+          <span class="small muted row" style={{ gap: '4px' }}>
+            {SLIPS.length} gulungan menunggu <Icon name="next" size={16} />
+          </span>
         </span>
       </button>
 
