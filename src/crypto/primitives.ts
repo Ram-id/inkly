@@ -1,135 +1,111 @@
-import crypto from 'node:crypto';
+import { xchacha20poly1305 } from '@noble/ciphers/chacha';
+import { hkdf } from '@noble/hashes/hkdf';
+import { sha256 } from '@noble/hashes/sha2';
 
 /**
- * Standard Cryptographic Primitives Implementation
- * Strictly uses RFC 8439 (ChaCha20-Poly1305 AEAD), RFC 5869 (HKDF-SHA256), and CSPRNG.
- * NO CUSTOM CRYPTOGRAPHY.
+ * Low-level building blocks. Everything here uses audited libraries (@noble/*) or the
+ * platform CSPRNG; there is no home-made cryptography.
+ *
+ * Sealed format (version 1):  [0x01][24-byte random nonce][ciphertext || 16-byte Poly1305 tag]
+ * XChaCha20-Poly1305 has a 192-bit nonce, so random nonces are safe for any realistic volume.
  */
 
-export const CIPHER_ALGORITHM = 'chacha20-poly1305';
-export const KEY_LENGTH = 32; // 256 bits
-export const NONCE_LENGTH = 12; // 96 bits standard RFC 8439 IV
-export const TAG_LENGTH = 16; // 128 bits Poly1305 MAC
+export const KEY_LEN = 32;
+const SEAL_VERSION = 1;
+const NONCE_LEN = 24;
 
-/**
- * Generate cryptographically secure random bytes
- */
-export function generateRandomBytes(length: number): Uint8Array {
-  return new Uint8Array(crypto.randomBytes(length));
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+export function randomBytes(n: number): Uint8Array {
+  const out = new Uint8Array(n);
+  crypto.getRandomValues(out);
+  return out;
 }
 
-/**
- * Derive high-entropy keys using standard HKDF-SHA256 (RFC 5869)
- */
-export function deriveKeyHkdf(
-  secret: Uint8Array,
-  salt: Uint8Array,
-  info: string,
-  length: number = KEY_LENGTH
-): Uint8Array {
-  const derived = crypto.hkdfSync(
-    'sha256',
-    Buffer.from(secret),
-    Buffer.from(salt),
-    Buffer.from(info, 'utf8'),
-    length
-  );
-  return new Uint8Array(derived);
+export function utf8(s: string): Uint8Array {
+  return enc.encode(s);
 }
 
-/**
- * Standard Authenticated Encryption with Associated Data (AEAD)
- * RFC 8439 ChaCha20-Poly1305 with 128-bit MAC tag.
- */
-export function encryptAead(
-  key: Uint8Array,
-  nonce: Uint8Array,
-  plaintext: Uint8Array,
-  associatedData?: Uint8Array
-): { ciphertext: Uint8Array; tag: Uint8Array } {
-  if (key.length !== KEY_LENGTH) {
-    throw new Error(`Invalid key length: expected ${KEY_LENGTH} bytes, got ${key.length}`);
-  }
-  if (nonce.length !== NONCE_LENGTH) {
-    throw new Error(`Invalid nonce length: expected ${NONCE_LENGTH} bytes, got ${nonce.length}`);
-  }
-
-  const cipher = crypto.createCipheriv(
-    CIPHER_ALGORITHM,
-    Buffer.from(key),
-    Buffer.from(nonce),
-    { authTagLength: TAG_LENGTH }
-  );
-
-  if (associatedData && associatedData.length > 0) {
-    cipher.setAAD(Buffer.from(associatedData));
-  }
-
-  const ciphertextPart = cipher.update(Buffer.from(plaintext));
-  const finalPart = cipher.final();
-  const ciphertext = Buffer.concat([ciphertextPart, finalPart]);
-  const tag = cipher.getAuthTag();
-
-  return {
-    ciphertext: new Uint8Array(ciphertext),
-    tag: new Uint8Array(tag)
-  };
+export function fromUtf8(b: Uint8Array): string {
+  return dec.decode(b);
 }
 
-/**
- * Standard Authenticated Decryption with Associated Data (AEAD)
- * Immediately throws on bit modification, invalid tag, or truncated ciphertext.
- */
-export function decryptAead(
-  key: Uint8Array,
-  nonce: Uint8Array,
-  ciphertext: Uint8Array,
-  tag: Uint8Array,
-  associatedData?: Uint8Array
-): Uint8Array {
-  if (key.length !== KEY_LENGTH) {
-    throw new Error(`Invalid key length: expected ${KEY_LENGTH} bytes, got ${key.length}`);
-  }
-  if (nonce.length !== NONCE_LENGTH) {
-    throw new Error(`Invalid nonce length: expected ${NONCE_LENGTH} bytes, got ${nonce.length}`);
-  }
-  if (tag.length !== TAG_LENGTH) {
-    throw new Error(`Invalid tag length: expected ${TAG_LENGTH} bytes, got ${tag.length}`);
-  }
+export function deriveKey(ikm: Uint8Array, info: string, salt?: Uint8Array): Uint8Array {
+  return hkdf(sha256, ikm, salt, utf8(info), KEY_LEN);
+}
 
-  const decipher = crypto.createDecipheriv(
-    CIPHER_ALGORITHM,
-    Buffer.from(key),
-    Buffer.from(nonce),
-    { authTagLength: TAG_LENGTH }
-  );
+export function sha256Bytes(data: Uint8Array): Uint8Array {
+  return sha256(data);
+}
 
-  decipher.setAuthTag(Buffer.from(tag));
+export function seal(key: Uint8Array, plaintext: Uint8Array, aad: string): Uint8Array {
+  const nonce = randomBytes(NONCE_LEN);
+  const ct = xchacha20poly1305(key, nonce, utf8(aad)).encrypt(plaintext);
+  const out = new Uint8Array(1 + NONCE_LEN + ct.length);
+  out[0] = SEAL_VERSION;
+  out.set(nonce, 1);
+  out.set(ct, 1 + NONCE_LEN);
+  return out;
+}
 
-  if (associatedData && associatedData.length > 0) {
-    decipher.setAAD(Buffer.from(associatedData));
+export class DecryptError extends Error {
+  constructor(message = 'Data tidak bisa dibuka: kunci salah atau data rusak.') {
+    super(message);
+    this.name = 'DecryptError';
   }
+}
 
+export function open(key: Uint8Array, sealed: Uint8Array, aad: string): Uint8Array {
+  if (sealed.length < 1 + NONCE_LEN + 16 || sealed[0] !== SEAL_VERSION) {
+    throw new DecryptError('Format data terenkripsi tidak dikenal.');
+  }
+  const nonce = sealed.subarray(1, 1 + NONCE_LEN);
+  const ct = sealed.subarray(1 + NONCE_LEN);
   try {
-    const decryptedPart = decipher.update(Buffer.from(ciphertext));
-    const finalPart = decipher.final();
-    return new Uint8Array(Buffer.concat([decryptedPart, finalPart]));
-  } catch (err) {
-    throw new Error('Authenticated decryption failed: ciphertext corrupted, tampered, or invalid key.');
+    return xchacha20poly1305(key, nonce, utf8(aad)).decrypt(ct);
+  } catch {
+    throw new DecryptError();
   }
 }
 
 /**
- * Constant-time equality comparison to prevent timing attacks
+ * Pads plaintext to a bucket size so the server only learns a coarse size, not the exact
+ * length of an entry. Layout: [4-byte big-endian length][data][zero padding].
  */
-export function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+export function pad(data: Uint8Array, bucket: number): Uint8Array {
+  const total = Math.ceil((data.length + 4) / bucket) * bucket;
+  const out = new Uint8Array(total);
+  new DataView(out.buffer).setUint32(0, data.length);
+  out.set(data, 4);
+  return out;
 }
 
-/**
- * Cryptographic memory wipe (zeroization) to clean sensitive key buffers
- */
-export function zeroize(buffer: Uint8Array): void {
-  buffer.fill(0);
+export function unpad(padded: Uint8Array): Uint8Array {
+  const len = new DataView(padded.buffer, padded.byteOffset, padded.byteLength).getUint32(0);
+  if (len > padded.length - 4) throw new DecryptError('Padding tidak valid.');
+  return padded.subarray(4, 4 + len);
+}
+
+export function wipe(...buffers: (Uint8Array | null | undefined)[]): void {
+  for (const b of buffers) b?.fill(0);
+}
+
+export function toB64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(s);
+}
+
+export function fromB64(b64: string): Uint8Array {
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+
+export function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
