@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => ({
     csp(loadEnv(mode, process.cwd(), 'VITE_').VITE_SUPABASE_URL ?? ''),
     preact(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: false,
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {

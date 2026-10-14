@@ -3,30 +3,51 @@
  * downloaded pictures. A seeded speckle pass gives each stamp an inked, slightly patchy look.
  */
 
+export type StampGroup = 'bunga' | 'hewan' | 'kata' | 'lainnya';
+
 export interface StampDef {
   id: string;
   label: string;
+  group: StampGroup;
   /** width / height */
   aspect: number;
 }
 
+export const STAMP_GROUPS: { id: StampGroup; label: string }[] = [
+  { id: 'bunga', label: 'Bunga' },
+  { id: 'hewan', label: 'Hewan' },
+  { id: 'kata', label: 'Kata' },
+  { id: 'lainnya', label: 'Lainnya' }
+];
+
 export const STAMPS: StampDef[] = [
-  { id: 'hati', label: 'Hati', aspect: 1 },
-  { id: 'haribaik', label: 'Hari baik', aspect: 1 },
-  { id: 'sayang', label: 'Sayang', aspect: 1.7 },
-  { id: 'pos', label: 'Perangko', aspect: 0.82 },
-  { id: 'lulus', label: 'Lulus', aspect: 1 },
-  { id: 'tanggal', label: 'Tanggal', aspect: 1.9 },
-  { id: 'cakar', label: 'Cakar', aspect: 1 },
-  { id: 'bunga', label: 'Bunga', aspect: 1 },
-  { id: 'bintang', label: 'Hebat', aspect: 1 },
-  { id: 'peluk', label: 'Peluk', aspect: 1.7 },
-  { id: 'senyum', label: 'Senyum', aspect: 1 },
-  { id: 'kucing', label: 'Kucing', aspect: 1 },
-  { id: 'mahkota', label: 'Mahkota', aspect: 1.3 },
-  { id: 'oke', label: 'Oke!', aspect: 1.3 },
-  { id: 'rindu', label: 'Rindu', aspect: 1.5 },
-  { id: 'kamuhebat', label: 'Kamu hebat', aspect: 1.9 }
+  { id: 'bunga', label: 'Bunga', group: 'bunga', aspect: 1 },
+  { id: 'tulip', label: 'Tulip', group: 'bunga', aspect: 1 },
+  { id: 'sakura', label: 'Sakura', group: 'bunga', aspect: 1 },
+  { id: 'daisy', label: 'Daisy', group: 'bunga', aspect: 1 },
+  { id: 'mawar', label: 'Mawar', group: 'bunga', aspect: 1 },
+  { id: 'daun', label: 'Daun', group: 'bunga', aspect: 1 },
+  { id: 'kucing', label: 'Kucing', group: 'hewan', aspect: 1 },
+  { id: 'kucingduduk', label: 'Kucing duduk', group: 'hewan', aspect: 1 },
+  { id: 'kelinci', label: 'Kelinci', group: 'hewan', aspect: 1 },
+  { id: 'beruang', label: 'Beruang', group: 'hewan', aspect: 1 },
+  { id: 'anjing', label: 'Anjing', group: 'hewan', aspect: 1 },
+  { id: 'bebek', label: 'Bebek', group: 'hewan', aspect: 1 },
+  { id: 'pinguin', label: 'Pinguin', group: 'hewan', aspect: 1 },
+  { id: 'cakar', label: 'Cakar', group: 'hewan', aspect: 1 },
+  { id: 'haribaik', label: 'Hari baik', group: 'kata', aspect: 1 },
+  { id: 'sayang', label: 'Sayang', group: 'kata', aspect: 1.7 },
+  { id: 'peluk', label: 'Peluk', group: 'kata', aspect: 1.7 },
+  { id: 'kamuhebat', label: 'Kamu hebat', group: 'kata', aspect: 1.9 },
+  { id: 'rindu', label: 'Rindu', group: 'kata', aspect: 1.5 },
+  { id: 'oke', label: 'Oke!', group: 'kata', aspect: 1.3 },
+  { id: 'lulus', label: 'Lulus', group: 'kata', aspect: 1 },
+  { id: 'bintang', label: 'Hebat', group: 'kata', aspect: 1 },
+  { id: 'tanggal', label: 'Tanggal', group: 'kata', aspect: 1.9 },
+  { id: 'hati', label: 'Hati', group: 'lainnya', aspect: 1 },
+  { id: 'pos', label: 'Perangko', group: 'lainnya', aspect: 0.82 },
+  { id: 'senyum', label: 'Senyum', group: 'lainnya', aspect: 1 },
+  { id: 'mahkota', label: 'Mahkota', group: 'lainnya', aspect: 1.3 }
 ];
 
 export const STAMP_BY_ID: Record<string, StampDef> = Object.fromEntries(STAMPS.map((s) => [s.id, s]));
@@ -351,6 +372,351 @@ export function drawStamp(ctx: CanvasRenderingContext2D, id: string, color: stri
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('kamu hebat!', cx, cy + 2 * u);
+      break;
+    }
+    // ------------------------------------------------------------ flowers
+    case 'tulip': {
+      ctx.lineWidth = 5 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 46 * u);
+      ctx.quadraticCurveTo(cx - 3 * u, cy + 20 * u, cx, cy - 4 * u);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(cx - 15 * u, cy + 28 * u, 15 * u, 6 * u, -0.6, 0, TAU);
+      ctx.ellipse(cx + 14 * u, cy + 20 * u, 14 * u, 5.5 * u, 0.65, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx - 25 * u, cy - 38 * u);
+      ctx.lineTo(cx - 12 * u, cy - 24 * u);
+      ctx.lineTo(cx, cy - 42 * u);
+      ctx.lineTo(cx + 12 * u, cy - 24 * u);
+      ctx.lineTo(cx + 25 * u, cy - 38 * u);
+      ctx.quadraticCurveTo(cx + 28 * u, cy + 2 * u, cx, cy + 2 * u);
+      ctx.quadraticCurveTo(cx - 28 * u, cy + 2 * u, cx - 25 * u, cy - 38 * u);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineWidth = 2.2 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 30 * u);
+      ctx.quadraticCurveTo(cx - 3 * u, cy - 14 * u, cx, cy - 2 * u);
+      ctx.stroke();
+      break;
+    }
+    case 'sakura':
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + (i * TAU) / 5;
+        ctx.beginPath();
+        ctx.ellipse(cx + Math.cos(a) * 23 * u, cy + Math.sin(a) * 23 * u, 13 * u, 20 * u, a + Math.PI / 2, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'destination-out';
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + (i * TAU) / 5;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(a) * 44 * u, cy + Math.sin(a) * 44 * u, 5 * u, 0, TAU);
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, 9 * u, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + Math.PI / 5 + (i * TAU) / 5;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(a) * 5 * u, cy + Math.sin(a) * 5 * u, 2.2 * u, 0, TAU);
+        ctx.fill();
+      }
+      break;
+    case 'daisy':
+      for (let i = 0; i < 14; i++) {
+        const a = (i * TAU) / 14;
+        ctx.beginPath();
+        ctx.ellipse(cx + Math.cos(a) * 28 * u, cy + Math.sin(a) * 28 * u, 17 * u, 5.5 * u, a, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14 * u, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 10.5 * u, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      for (let i = 0; i < 7; i++) {
+        const a = (i * TAU) / 7;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(a) * 5.5 * u, cy + Math.sin(a) * 5.5 * u, 1.4 * u, 0, TAU);
+        ctx.fill();
+      }
+      break;
+    case 'mawar': {
+      // leaves
+      ctx.beginPath();
+      ctx.ellipse(cx - 24 * u, cy + 33 * u, 17 * u, 7.5 * u, -0.55, 0, TAU);
+      ctx.ellipse(cx + 24 * u, cy + 33 * u, 17 * u, 7.5 * u, 0.55, 0, TAU);
+      ctx.fill();
+      // scalloped bloom
+      const hy = cy - 6 * u;
+      ctx.beginPath();
+      ctx.arc(cx, hy, 27 * u, 0, TAU);
+      ctx.fill();
+      for (let i = 0; i < 9; i++) {
+        const a = (i * TAU) / 9;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(a) * 26 * u, hy + Math.sin(a) * 26 * u, 10 * u, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineWidth = 3 * u;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let t = 0.6; t < 4.6 * Math.PI; t += 0.08) {
+        const r = (2 + t * 2) * u;
+        const x = cx + Math.cos(t) * r;
+        const y = hy + Math.sin(t) * r * 0.9;
+        if (t === 0.6) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      break;
+    }
+    case 'daun': {
+      // a sprig: curved stem with almond leaves on alternating sides
+      const P0 = [cx - 6 * u, cy + 47 * u];
+      const P1 = [cx + 12 * u, cy + 4 * u];
+      const P2 = [cx + 2 * u, cy - 36 * u];
+      const at = (t: number) => [
+        (1 - t) ** 2 * P0[0] + 2 * (1 - t) * t * P1[0] + t * t * P2[0],
+        (1 - t) ** 2 * P0[1] + 2 * (1 - t) * t * P1[1] + t * t * P2[1]
+      ];
+      ctx.lineWidth = 5 * u;
+      ctx.beginPath();
+      ctx.moveTo(P0[0], P0[1]);
+      ctx.quadraticCurveTo(P1[0], P1[1], P2[0], P2[1]);
+      ctx.stroke();
+      const leaves: [number, number, number][] = [
+        [0.2, -2.6, 36],
+        [0.36, -0.5, 36],
+        [0.53, -2.5, 32],
+        [0.69, -0.6, 29],
+        [0.84, -2.4, 24],
+        [1, -1.75, 20]
+      ];
+      for (const [t, ang, len] of leaves) {
+        const [x, y] = at(t);
+        const L = len * u;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(L * 0.5, -L * 0.42, L, 0);
+        ctx.quadraticCurveTo(L * 0.5, L * 0.42, 0, 0);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = 1.6 * u;
+        ctx.beginPath();
+        ctx.moveTo(L * 0.18, 0);
+        ctx.lineTo(L * 0.8, 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+      break;
+    }
+    // ------------------------------------------------------------ animals
+    case 'kucingduduk': {
+      ctx.lineWidth = 7 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx + 18 * u, cy + 40 * u);
+      ctx.bezierCurveTo(cx + 46 * u, cy + 40 * u, cx + 46 * u, cy + 4 * u, cx + 34 * u, cy - 2 * u);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 20 * u, 24 * u, 26 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy - 16 * u, 18 * u, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx - 17 * u, cy - 22 * u);
+      ctx.lineTo(cx - 15 * u, cy - 44 * u);
+      ctx.lineTo(cx - 3 * u, cy - 32 * u);
+      ctx.moveTo(cx + 17 * u, cy - 22 * u);
+      ctx.lineTo(cx + 15 * u, cy - 44 * u);
+      ctx.lineTo(cx + 3 * u, cy - 32 * u);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.ellipse(cx - 7 * u, cy - 17 * u, 2.6 * u, 3.6 * u, 0, 0, TAU);
+      ctx.ellipse(cx + 7 * u, cy - 17 * u, 2.6 * u, 3.6 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.lineWidth = 2 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx - 4 * u, cy - 9 * u);
+      ctx.quadraticCurveTo(cx - 2 * u, cy - 6 * u, cx, cy - 9 * u);
+      ctx.quadraticCurveTo(cx + 2 * u, cy - 6 * u, cx + 4 * u, cy - 9 * u);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx - 8 * u, cy + 38 * u);
+      ctx.lineTo(cx - 8 * u, cy + 30 * u);
+      ctx.moveTo(cx + 8 * u, cy + 38 * u);
+      ctx.lineTo(cx + 8 * u, cy + 30 * u);
+      ctx.stroke();
+      break;
+    }
+    case 'kelinci': {
+      ctx.beginPath();
+      ctx.ellipse(cx - 13 * u, cy - 26 * u, 9.5 * u, 24 * u, -0.18, 0, TAU);
+      ctx.ellipse(cx + 13 * u, cy - 26 * u, 9.5 * u, 24 * u, 0.18, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 16 * u, 30 * u, 27 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.ellipse(cx - 13 * u, cy - 28 * u, 4 * u, 15 * u, -0.18, 0, TAU);
+      ctx.ellipse(cx + 13 * u, cy - 28 * u, 4 * u, 15 * u, 0.18, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx - 11 * u, cy + 10 * u, 3.8 * u, 0, TAU);
+      ctx.arc(cx + 11 * u, cy + 10 * u, 3.8 * u, 0, TAU);
+      ctx.fill();
+      heartPath(ctx, cx, cy + 19 * u, 3.4 * u);
+      ctx.fill();
+      ctx.lineWidth = 2 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx - 6 * u, cy + 25 * u);
+      ctx.quadraticCurveTo(cx - 3 * u, cy + 29 * u, cx, cy + 24 * u);
+      ctx.quadraticCurveTo(cx + 3 * u, cy + 29 * u, cx + 6 * u, cy + 25 * u);
+      ctx.stroke();
+      break;
+    }
+    case 'beruang': {
+      ctx.beginPath();
+      ctx.arc(cx - 27 * u, cy - 24 * u, 13 * u, 0, TAU);
+      ctx.arc(cx + 27 * u, cy - 24 * u, 13 * u, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy + 4 * u, 34 * u, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(cx - 27 * u, cy - 24 * u, 6.5 * u, 0, TAU);
+      ctx.arc(cx + 27 * u, cy - 24 * u, 6.5 * u, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx - 13 * u, cy - 4 * u, 4.2 * u, 0, TAU);
+      ctx.arc(cx + 13 * u, cy - 4 * u, 4.2 * u, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 17 * u, 14 * u, 11 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 13 * u, 5.5 * u, 4 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.lineWidth = 2.2 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 16 * u);
+      ctx.lineTo(cx, cy + 21 * u);
+      ctx.moveTo(cx - 5 * u, cy + 22 * u);
+      ctx.quadraticCurveTo(cx, cy + 25 * u, cx + 5 * u, cy + 22 * u);
+      ctx.stroke();
+      break;
+    }
+    case 'anjing': {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 6 * u, 27 * u, 30 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx - 30 * u, cy - 2 * u, 11 * u, 24 * u, 0.45, 0, TAU);
+      ctx.ellipse(cx + 30 * u, cy - 2 * u, 11 * u, 24 * u, -0.45, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineWidth = 2.5 * u;
+      ctx.beginPath();
+      ctx.ellipse(cx - 30 * u, cy - 2 * u, 11 * u, 24 * u, 0.45, -0.2, 1.2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(cx + 30 * u, cy - 2 * u, 11 * u, 24 * u, -0.45, Math.PI - 1.2, Math.PI + 0.2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx - 11 * u, cy - 2 * u, 4.2 * u, 0, TAU);
+      ctx.arc(cx + 11 * u, cy - 2 * u, 4.2 * u, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 16 * u, 13 * u, 10 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 12 * u, 5.5 * u, 4 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 22 * u, 3.5 * u, 4.5 * u, 0, 0, Math.PI);
+      ctx.fill();
+      break;
+    }
+    case 'bebek': {
+      ctx.beginPath();
+      ctx.ellipse(cx + 6 * u, cy + 18 * u, 34 * u, 21 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx + 36 * u, cy + 10 * u);
+      ctx.lineTo(cx + 46 * u, cy - 2 * u);
+      ctx.lineTo(cx + 40 * u, cy + 18 * u);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx - 14 * u, cy - 14 * u, 18 * u, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx - 36 * u, cy - 9 * u, 11 * u, 5.5 * u, 0.1, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(cx - 17 * u, cy - 18 * u, 3.6 * u, 0, TAU);
+      ctx.fill();
+      ctx.lineWidth = 2.4 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx - 44 * u, cy - 9 * u);
+      ctx.lineTo(cx - 28 * u, cy - 9 * u);
+      ctx.stroke();
+      ctx.lineWidth = 3 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx - 4 * u, cy + 14 * u);
+      ctx.quadraticCurveTo(cx + 12 * u, cy + 28 * u, cx + 26 * u, cy + 12 * u);
+      ctx.stroke();
+      break;
+    }
+    case 'pinguin': {
+      ctx.beginPath();
+      ctx.ellipse(cx - 12 * u, cy + 44 * u, 9 * u, 4.5 * u, 0, 0, TAU);
+      ctx.ellipse(cx + 12 * u, cy + 44 * u, 9 * u, 4.5 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 4 * u, 27 * u, 38 * u, 0, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx - 27 * u, cy + 12 * u, 7 * u, 18 * u, 0.35, 0, TAU);
+      ctx.ellipse(cx + 27 * u, cy + 12 * u, 7 * u, 18 * u, -0.35, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 16 * u);
+      ctx.bezierCurveTo(cx - 24 * u, cy - 26 * u, cx - 24 * u, cy + 40 * u, cx, cy + 38 * u);
+      ctx.bezierCurveTo(cx + 24 * u, cy + 40 * u, cx + 24 * u, cy - 26 * u, cx, cy - 16 * u);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx - 9 * u, cy - 18 * u, 3.6 * u, 0, TAU);
+      ctx.arc(cx + 9 * u, cy - 18 * u, 3.6 * u, 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();
+      ctx.moveTo(cx - 6 * u, cy - 8 * u);
+      ctx.lineTo(cx + 6 * u, cy - 8 * u);
+      ctx.lineTo(cx, cy);
+      ctx.closePath();
+      ctx.fill();
       break;
     }
   }

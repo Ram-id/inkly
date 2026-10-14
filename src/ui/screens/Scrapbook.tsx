@@ -37,7 +37,7 @@ export function Scrapbook({ id }: { id: string }) {
   const [tab, setTab] = useState<Tab>('sticker');
   const [textSheet, setTextSheet] = useState<{ editing?: ScrapItem } | null>(null);
   const [ink, setInk] = useState<InkSettings>(DEFAULT_INK);
-  const [armed, setArmed] = useState<ArmedStamp>({ id: 'hati', color: '#D13A72' });
+  const [armed, setArmed] = useState<ArmedStamp>({ id: 'sakura', color: '#D13A72' });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(layout);
 

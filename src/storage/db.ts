@@ -45,6 +45,8 @@ export interface LocalPrefs {
   theme: 'system' | 'light' | 'dark';
   /** false until the owner has confirmed they wrote down the 24 recovery words */
   recoveryConfirmed: boolean;
+  /** when a backup file was last downloaded on this device */
+  lastBackupAt?: number;
 }
 
 export const DEFAULT_PREFS: LocalPrefs = { autoLockMinutes: 1, theme: 'system', recoveryConfirmed: true };

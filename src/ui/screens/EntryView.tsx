@@ -22,7 +22,7 @@ export function EntryView({ id, query }: { id: string; query?: URLSearchParams }
   const [decorating, setDecorating] = useState(query?.get('decor') === '1');
   const [decorTab, setDecorTab] = useState<DecorTab>('stiker');
   const [selected, setSelected] = useState<string | null>(null);
-  const [armed, setArmed] = useState<ArmedStamp>({ id: 'hati', color: '#D13A72' });
+  const [armed, setArmed] = useState<ArmedStamp>({ id: 'sakura', color: '#D13A72' });
   const [decor, setDecor] = useState<ScrapItem[]>(() => entry?.decor ?? []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(decor);

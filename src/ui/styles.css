@@ -2229,3 +2229,38 @@ body {
   height: 22px;
   width: auto;
 }
+
+/* ---------------------------------------------------------------- updates & backup status */
+
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + var(--nav-h) + 22px);
+  transform: translateX(-50%);
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 18px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
+  font-weight: 800;
+  font-size: 14px;
+  white-space: nowrap;
+  animation: rise 0.25s ease;
+}
+.backup-status {
+  gap: 12px;
+  text-align: left;
+  width: 100%;
+}
+.backup-status.ok {
+  background: var(--mint-soft);
+  border-color: transparent;
+}
+.backup-status.warn {
+  background: var(--sun-soft);
+  border-color: transparent;
+}

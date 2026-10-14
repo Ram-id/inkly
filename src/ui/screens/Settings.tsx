@@ -10,6 +10,7 @@ import { Sheet, busy, confirmDialog, errorMessage, toast } from '../components/f
 import { RecoveryWords } from '../components/RecoveryWords';
 import { InstallCard } from '../components/InstallCard';
 import { unlockWithPassword } from '../../crypto/keys';
+import { backupRoute, backupState } from '../backupStatus';
 
 function Item({ icon, label, hint, onClick, right, danger }: { icon: IconName; label: string; hint?: string; onClick?: () => void; right?: preact.ComponentChildren; danger?: boolean }) {
   const body = (
@@ -44,12 +45,26 @@ export function Settings() {
   const vault = useVault();
   const { status, linked } = useSync();
   const [name, setName] = useState(vault.settings.displayName);
+  const backup = backupState(vault, linked, status);
 
   return (
     <main class="screen stack-lg">
       <h1 class="greeting" style={{ paddingTop: '8px' }}>
         Pengaturan
       </h1>
+
+      <button class={`card row backup-status ${backup.cloud ? 'ok' : 'warn'}`} onClick={() => go(backupRoute())}>
+        <span style={{ fontSize: '28px' }}>{backup.cloud ? '☁️' : '💾'}</span>
+        <span class="grow">
+          <b>{backup.cloud ? 'Tersimpan di cloud ✓' : 'Belum tersimpan di cloud'}</b>
+          <span class="small muted" style={{ display: 'block' }}>
+            {backup.lastCopyAt
+              ? `Cadangan terakhir ${new Date(backup.lastCopyAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+              : 'Belum ada cadangan'}
+          </span>
+        </span>
+        <Icon name="next" size={18} />
+      </button>
 
       <section class="stack">
         <h2 class="section-title">Profil</h2>
@@ -507,6 +522,7 @@ export function BackupSettings() {
             onClick={async () => {
               const json = await busy('Menyiapkan backup…', () => vault.exportBackup());
               downloadText(`inkly-backup-${stamp()}.inkly`, json);
+              void vault.savePrefs({ lastBackupAt: Date.now() });
             }}
           />
           <Item icon="upload" label="Pulihkan / gabungkan backup" onClick={() => setImporting(true)} />

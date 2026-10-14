@@ -1,8 +1,8 @@
 import type { ComponentChildren } from 'preact';
-import { useRef } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { STICKERS, WORD_STICKERS } from '../../domain/catalog';
 import type { ScrapItem } from '../../domain/types';
-import { STAMP_INKS, STAMPS, todayStampText } from '../../media/stamps';
+import { STAMP_BY_ID, STAMP_GROUPS, STAMP_INKS, STAMPS, todayStampText, type StampGroup } from '../../media/stamps';
 import { Icon } from '../icons';
 import { useItemGestures } from './itemGestures';
 import { ItemBody, StampImg } from './ScrapCanvas';
@@ -63,8 +63,16 @@ export interface ArmedStamp {
 
 /** Stamp drawer: pick a stamp and an ink colour, then tap anywhere on the page to stamp it. */
 export function StampPicker({ armed, onArm, row }: { armed: ArmedStamp; onArm: (a: ArmedStamp) => void; row?: boolean }) {
+  const [group, setGroup] = useState<StampGroup>(STAMP_BY_ID[armed.id]?.group ?? 'bunga');
   return (
     <div class="stack" style={{ gap: '10px' }}>
+      <div class="chips" style={{ margin: 0, padding: '2px 0' }}>
+        {STAMP_GROUPS.map((g) => (
+          <button key={g.id} class={`chip ${group === g.id ? 'on' : ''}`} onClick={() => setGroup(g.id)}>
+            {g.label}
+          </button>
+        ))}
+      </div>
       <div class="ink-colors" role="radiogroup" aria-label="Warna tinta">
         {STAMP_INKS.map((c) => (
           <button
@@ -79,7 +87,7 @@ export function StampPicker({ armed, onArm, row }: { armed: ArmedStamp; onArm: (
         ))}
       </div>
       <div class={row ? 'stamp-row' : 'stamp-grid'}>
-        {STAMPS.map((s) => (
+        {STAMPS.filter((s) => s.group === group).map((s) => (
           <button key={s.id} class={`stamp-pick ${armed.id === s.id ? 'on' : ''}`} onClick={() => onArm({ ...armed, id: s.id })} aria-pressed={armed.id === s.id}>
             <StampImg id={s.id} color={armed.color} text={s.id === 'tanggal' ? todayStampText() : ''} height={120} class="stamp-preview" />
             <span>{s.label}</span>

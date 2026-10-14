@@ -8,6 +8,7 @@ import { InstallCard } from '../components/InstallCard';
 import { Jar } from '../components/Paper';
 import { Inky } from '../components/Inky';
 import { TemplateSheet } from './Editor';
+import { backupRoute, backupState } from '../backupStatus';
 
 function greeting(h: number): string {
   if (h < 4) return 'Selamat malam';
@@ -30,6 +31,7 @@ export function Home() {
   const memories = useMemo(() => onThisDay(all).slice(0, 2), [vault.version]);
   const todayCount = all.filter((e) => dayKey(e.date) === dayKey(new Date())).length;
   const name = vault.settings.displayName;
+  const backup = backupState(vault, linked, status);
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 
   let shown = searchEntries(all, query);
@@ -86,6 +88,14 @@ export function Home() {
           <span>Template</span>
         </button>
       </div>
+
+      {backup.needsAttention && (
+        <button class="card warn row" style={{ gap: '12px', textAlign: 'left' }} onClick={() => go(backupRoute())}>
+          <span style={{ fontSize: '26px' }}>💾</span>
+          <span class="grow small bold">Cadangkan jurnalmu</span>
+          <Icon name="next" size={18} />
+        </button>
+      )}
 
       {!vault.prefs.recoveryConfirmed && (
         <button class="card warn row" style={{ gap: '12px', textAlign: 'left' }} onClick={() => go('settings/security')}>

@@ -1,10 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="116" fill="#D13A72"/>
-  
-  <g transform="translate(256 256) scale(1) translate(-256 -256)">
-    <path d="M256 92c58 74 104 132 104 196a104 104 0 0 1-208 0c0-64 46-122 104-196z" fill="#FAF7F2"/>
-    <path d="M256 196l44 70-44 112-44-112z" fill="#D13A72"/>
-    <circle cx="256" cy="282" r="13" fill="#FAF7F2"/>
-    <path d="M256 295v62" stroke="#FAF7F2" stroke-width="7" stroke-linecap="round"/>
-  </g>
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.38" r="0.75">
+      <stop offset="0" stop-color="#FFF6F9"/>
+      <stop offset="1" stop-color="#FFC9DC"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <ellipse cx="256" cy="424" rx="99" ry="16.5" fill="#E24F8B" opacity="0.14"/>
+  <g transform="translate(91 83) scale(2.75)">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFA8CA"/>
+      <stop offset="1" stop-color="#E24F8B"/>
+    </linearGradient>
+  </defs>
+  <path d="M60 6 C74 30 104 52 104 80 a44 44 0 0 1 -88 0 C16 52 46 30 60 6z" fill="url(#body)"/>
+  <path d="M38 58 c-6 8 -8 16 -7 24" stroke="#ffffff" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.55"/>
+  <ellipse cx="37" cy="93" rx="8.5" ry="5.5" fill="#C2306A" opacity="0.32"/>
+  <ellipse cx="83" cy="93" rx="8.5" ry="5.5" fill="#C2306A" opacity="0.32"/>
+  <ellipse cx="45" cy="79" rx="5.5" ry="7" fill="#2B2633"/>
+  <circle cx="46.8" cy="76.2" r="2.1" fill="#fff"/>
+  <ellipse cx="75" cy="79" rx="5.5" ry="7" fill="#2B2633"/>
+  <circle cx="76.8" cy="76.2" r="2.1" fill="#fff"/>
+  <path d="M52 92 q8 8 16 0" stroke="#2B2633" stroke-width="3.8" stroke-linecap="round" fill="none"/></g>
+  <path transform="translate(384 144) scale(2.6)" d="M0 9 C-14 -1 -7 -13 0 -5 C7 -13 14 -1 0 9z" fill="#FF7AAE"/>
+  <path transform="translate(116 286) scale(1.6)" d="M0 9 C-14 -1 -7 -13 0 -5 C7 -13 14 -1 0 9z" fill="#FFA8CA"/>
+  <path transform="translate(138 138) scale(2.2)" d="M0 -10 Q1.5 -1.5 10 0 Q1.5 1.5 0 10 Q-1.5 1.5 -10 0 Q-1.5 -1.5 0 -10z" fill="#FFB3D0"/>
+  <path transform="translate(396 326) scale(1.5)" d="M0 -10 Q1.5 -1.5 10 0 Q1.5 1.5 0 10 Q-1.5 1.5 -10 0 Q-1.5 -1.5 0 -10z" fill="#FF9DC2"/>
 </svg>

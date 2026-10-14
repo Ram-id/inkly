@@ -3,6 +3,7 @@ import { go, useRoute } from './router';
 import { services, useVault } from './services';
 import { BottomNav } from './components/common';
 import { FeedbackHost } from './components/feedback';
+import { UpdateBanner } from './components/UpdateBanner';
 import { Onboarding } from './screens/Onboarding';
 import { Unlock } from './screens/Unlock';
 import { Home } from './screens/Home';
@@ -101,6 +102,7 @@ export function App() {
     <>
       {body}
       <FeedbackHost />
+      <UpdateBanner />
     </>
   );
 }

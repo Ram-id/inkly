@@ -3,6 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { Vault } from './storage/vault';
 import { services } from './ui/services';
 import { App } from './ui/App';
+import { markUpdateReady, setUpdater } from './ui/updates';
 import './ui/styles.css';
 
 async function boot() {
@@ -22,7 +23,17 @@ async function boot() {
     p.textContent = `Inkly tidak bisa dibuka di browser ini (${e instanceof Error ? e.message : e}). Pastikan tidak dalam mode penyamaran yang memblokir penyimpanan.`;
     root.appendChild(p);
   }
-  if (import.meta.env.PROD) registerSW({ immediate: true });
+  if (import.meta.env.PROD) {
+    const update = registerSW({
+      immediate: true,
+      onNeedRefresh: markUpdateReady,
+      onRegisteredSW(_url, reg) {
+        // look for a new version every hour while the app stays open
+        if (reg) setInterval(() => void reg.update(), 60 * 60 * 1000);
+      }
+    });
+    setUpdater(update);
+  }
 }
 
 void boot();
