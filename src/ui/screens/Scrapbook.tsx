@@ -6,15 +6,23 @@ import { useVault } from '../services';
 import { Empty, TopBar } from '../components/common';
 import { Sheet } from '../components/feedback';
 import { ScrapCanvas } from '../components/ScrapCanvas';
+import { DEFAULT_INK, InkTools, type InkSettings } from '../components/InkTools';
+import { StampPicker, type ArmedStamp } from '../components/Decor';
+import { todayStampText } from '../../media/stamps';
+import { busy, toast } from '../components/feedback';
+import { renderScrapbook } from '../../media/scrapRender';
+import { canvasToBlob, downloadBlob, stamp } from '../../media/ink';
 
-type Tab = 'sticker' | 'kata' | 'foto' | 'teks' | 'washi' | 'latar';
+type Tab = 'sticker' | 'cap' | 'kata' | 'foto' | 'teks' | 'washi' | 'pena' | 'latar';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'sticker', label: 'Stiker' },
+  { id: 'cap', label: 'Cap' },
   { id: 'kata', label: 'Kata' },
   { id: 'foto', label: 'Foto' },
   { id: 'teks', label: 'Teks' },
   { id: 'washi', label: 'Washi' },
+  { id: 'pena', label: 'Pena' },
   { id: 'latar', label: 'Latar' }
 ];
 
@@ -28,6 +36,8 @@ export function Scrapbook({ id }: { id: string }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('sticker');
   const [textSheet, setTextSheet] = useState<{ editing?: ScrapItem } | null>(null);
+  const [ink, setInk] = useState<InkSettings>(DEFAULT_INK);
+  const [armed, setArmed] = useState<ArmedStamp>({ id: 'hati', color: '#D13A72' });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(layout);
 
@@ -84,11 +94,46 @@ export function Scrapbook({ id }: { id: string }) {
           persist();
           history.back();
         }}
+        right={
+          <button
+            class="icon-btn"
+            aria-label="Unduh halaman"
+            onClick={async () => {
+              const blob = await busy('Menyiapkan gambar…', async () =>
+                canvasToBlob(await renderScrapbook(layout, entry.photos, (pid) => vault.photoUrl(pid)))
+              );
+              downloadBlob(blob, `inkly-scrapbook-${stamp()}.png`);
+              toast('Halaman diunduh 🎨');
+            }}
+          >
+            <Icon name="download" />
+          </button>
+        }
       />
       <div class="stack">
-        <ScrapCanvas layout={layout} photos={entry.photos} selected={selected} onSelect={setSelected} onChange={setItems} />
+        <ScrapCanvas
+          layout={layout}
+          photos={entry.photos}
+          selected={tab === 'pena' ? null : selected}
+          onSelect={setSelected}
+          onChange={setItems}
+          inkMode={tab === 'pena' ? ink : null}
+          onInk={(strokes) => commit({ ...layout, ink: strokes })}
+          onTapEmpty={(x, y) => {
+            if (tab !== 'cap') return;
+            add('stamp', armed.id, {
+              x,
+              y,
+              color: armed.color,
+              text: armed.id === 'tanggal' ? todayStampText(new Date(entry.date)) : undefined,
+              scale: 0.75,
+              rot: Math.round((Math.random() - 0.5) * 24)
+            });
+            setSelected(null);
+          }}
+        />
 
-        {sel ? (
+        {sel && tab !== 'pena' ? (
           <div class="card flat row wrap" style={{ gap: '4px', padding: '8px', justifyContent: 'center' }}>
             <button class="icon-btn" aria-label="Perkecil" onClick={() => patch({ scale: Math.max(0.3, sel.scale / 1.15) })}>
               <Icon name="minus" />
@@ -122,11 +167,9 @@ export function Scrapbook({ id }: { id: string }) {
               <Icon name="check" />
             </button>
           </div>
-        ) : (
-          <p class="tiny faint center">Seret untuk memindah · cubit dengan dua jari untuk memperbesar & memutar</p>
-        )}
+        ) : null}
 
-        <div class="segmented" role="tablist" style={{ overflowX: 'auto' }}>
+        <div class="segmented tabs-scroll" role="tablist">
           {TABS.map((t) => (
             <button key={t.id} role="tab" aria-selected={tab === t.id} class={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
               {t.label}
@@ -168,7 +211,7 @@ export function Scrapbook({ id }: { id: string }) {
               ))}
             </div>
           ) : (
-            <p class="small muted">Tambahkan foto di halaman tulis dulu, lalu tempel di sini sebagai polaroid.</p>
+            <p class="small muted">Belum ada foto.</p>
           ))}
 
         {tab === 'teks' && (
@@ -182,6 +225,22 @@ export function Scrapbook({ id }: { id: string }) {
             {TAPE_COLORS.map((c) => (
               <button key={c} class="swatch" style={{ background: c, borderRadius: '6px', width: '56px' }} onClick={() => add('tape', c)} aria-label="Tempel washi tape" />
             ))}
+          </div>
+        )}
+
+        {tab === 'cap' && <StampPicker armed={armed} onArm={setArmed} row />}
+
+        {tab === 'pena' && (
+          <div class="stack">
+            <InkTools value={ink} onChange={setInk} />
+            <div class="row">
+              <button class="btn secondary small grow" disabled={!layout.ink?.length} onClick={() => commit({ ...layout, ink: (layout.ink ?? []).slice(0, -1) })}>
+                <Icon name="undo" size={17} /> Urungkan
+              </button>
+              <button class="btn secondary small grow" disabled={!layout.ink?.length} onClick={() => commit({ ...layout, ink: [] })}>
+                <Icon name="trash" size={17} /> Hapus coretan
+              </button>
+            </div>
           </div>
         )}
 

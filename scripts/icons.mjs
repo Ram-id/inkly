@@ -8,14 +8,14 @@ const glyph = (scale) => {
   return `
   <g transform="${t}">
     <path d="M256 92c58 74 104 132 104 196a104 104 0 0 1-208 0c0-64 46-122 104-196z" fill="#FAF7F2"/>
-    <path d="M256 196l44 70-44 112-44-112z" fill="#6C54B3"/>
+    <path d="M256 196l44 70-44 112-44-112z" fill="#D13A72"/>
     <circle cx="256" cy="282" r="13" fill="#FAF7F2"/>
     <path d="M256 295v62" stroke="#FAF7F2" stroke-width="7" stroke-linecap="round"/>
   </g>`;
 };
 
 const svg = (rounded, scale) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="${rounded ? 116 : 0}" fill="#6C54B3"/>
+  <rect width="512" height="512" rx="${rounded ? 116 : 0}" fill="#D13A72"/>
   ${glyph(scale)}
 </svg>`;
 

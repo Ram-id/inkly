@@ -1,3 +1,5 @@
+import type { Stroke } from '../media/ink';
+
 /** The feeling behind each paper colour in the bottle. */
 export type MoodId = 'senang' | 'semangat' | 'tenang' | 'rindu' | 'lelah' | 'cemas' | 'sedih' | 'marah';
 
@@ -19,7 +21,7 @@ export interface Photo {
   thumb: string;
 }
 
-export type ScrapItemKind = 'sticker' | 'label' | 'text' | 'photo' | 'tape';
+export type ScrapItemKind = 'sticker' | 'label' | 'text' | 'photo' | 'tape' | 'stamp';
 
 export interface ScrapItem {
   id: string;
@@ -35,12 +37,16 @@ export interface ScrapItem {
   content: string;
   color?: string;
   font?: 'hand' | 'sans' | 'serif';
+  /** extra text for stamps that carry one (e.g. the date stamp) */
+  text?: string;
 }
 
 export interface ScrapbookLayout {
   bg: string;
   pattern: 'none' | 'dots' | 'grid' | 'lines';
   items: ScrapItem[];
+  /** pen drawings on top of the page */
+  ink?: Stroke[];
 }
 
 export interface Entry {
@@ -59,6 +65,8 @@ export interface Entry {
   favorite?: boolean;
   templateId?: string;
   scrapbook?: ScrapbookLayout;
+  /** stickers and stamps placed anywhere on the journal page (y is a fraction of the page width) */
+  decor?: ScrapItem[];
 }
 
 export interface UserSettings {

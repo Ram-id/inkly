@@ -35,7 +35,6 @@ export function Stats() {
           Statistik
         </h1>
         <Empty emoji="📊" title="Belum ada data">
-          <p class="small">Statistik muncul setelah kamu menulis beberapa jurnal.</p>
         </Empty>
       </main>
     );
@@ -46,7 +45,6 @@ export function Stats() {
     <main class="screen stack-lg">
       <header style={{ paddingTop: '8px' }}>
         <h1 class="greeting">Statistik</h1>
-        <p class="small muted">Dihitung di HP-mu saja. Tidak ada data yang dikirim untuk analitik.</p>
       </header>
 
       <div class="tiles">
@@ -125,7 +123,7 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
   const y = (s: number) => PAD.t + ((5 - s) / 4) * (H - PAD.t - PAD.b);
   const path = logged.map((p, n) => `${n ? 'L' : 'M'}${x(p.i).toFixed(1)},${y(p.score!).toFixed(1)}`).join(' ');
 
-  if (!logged.length) return <p class="small muted">Ambil kertas dari botol perasaan saat menulis untuk melihat grafiknya di sini.</p>;
+  if (!logged.length) return <p class="small muted">Belum ada data.</p>;
 
   const pick = (clientX: number, rect: DOMRect) => {
     const px = ((clientX - rect.left) / rect.width) * W;

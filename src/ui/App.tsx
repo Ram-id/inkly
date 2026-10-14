@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { go, useRoute } from './router';
 import { services, useVault } from './services';
 import { BottomNav } from './components/common';
@@ -6,13 +6,14 @@ import { FeedbackHost } from './components/feedback';
 import { Onboarding } from './screens/Onboarding';
 import { Unlock } from './screens/Unlock';
 import { Home } from './screens/Home';
-import { Editor, TemplateSheet } from './screens/Editor';
+import { Editor } from './screens/Editor';
 import { EntryView } from './screens/EntryView';
 import { Scrapbook } from './screens/Scrapbook';
 import { Bottle } from './screens/Bottle';
+import { DrawPad } from './screens/DrawPad';
 import { Calendar } from './screens/Calendar';
 import { Stats } from './screens/Stats';
-import { BackupSettings, Privacy, ReminderSettings, SecuritySettings, Settings, SyncSettings } from './screens/Settings';
+import { BackupSettings, ReminderSettings, SecuritySettings, Settings, SyncSettings } from './screens/Settings';
 
 function useTheme(theme: 'system' | 'light' | 'dark') {
   useEffect(() => {
@@ -29,8 +30,10 @@ function useTheme(theme: 'system' | 'light' | 'dark') {
  * untouched for the chosen time. Also blurs the screen while hidden so the app switcher
  * preview does not show an open entry.
  */
-function useAutoLock() {
+function useAutoLock(paused: boolean) {
   const vault = services.vault;
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   useEffect(() => {
     let hiddenAt = 0;
     let last = Date.now();
@@ -42,16 +45,16 @@ function useAutoLock() {
         document.body.classList.add('privacy-blur');
         if (vault.prefs.autoLockMinutes === 0) {
           // give the editor's own "save on hide" a moment to run first
-          setTimeout(() => document.visibilityState === 'hidden' && vault.unlocked && vault.lock(), 400);
+          setTimeout(() => !pausedRef.current && document.visibilityState === 'hidden' && vault.unlocked && vault.lock(), 400);
         }
       } else {
         document.body.classList.remove('privacy-blur');
-        if (vault.unlocked && hiddenAt && Date.now() - hiddenAt >= limit()) vault.lock();
+        if (!pausedRef.current && vault.unlocked && hiddenAt && Date.now() - hiddenAt >= limit()) vault.lock();
         touch();
       }
     };
     const tick = setInterval(() => {
-      if (vault.unlocked && document.visibilityState === 'visible' && Date.now() - last > Math.max(limit(), 5 * 60_000)) vault.lock();
+      if (!pausedRef.current && vault.unlocked && document.visibilityState === 'visible' && Date.now() - last > Math.max(limit(), 5 * 60_000)) vault.lock();
     }, 15_000);
     const evs = ['pointerdown', 'keydown', 'scroll'] as const;
     evs.forEach((e) => window.addEventListener(e, touch, { passive: true }));
@@ -85,7 +88,8 @@ export function App() {
   // password is set, but the recovery words still have to be shown and confirmed.
   const [onboarding, setOnboarding] = useState(() => !vault.exists);
   useTheme(vault.prefs.theme);
-  useAutoLock();
+  // Never lock in the middle of onboarding (e.g. while the owner writes down the 24 words).
+  useAutoLock(onboarding);
   useBackgroundSync();
 
   let body;
@@ -103,7 +107,6 @@ export function App() {
 
 function Main() {
   const { path, query } = useRoute();
-  const [compose, setCompose] = useState(false);
   const [section, id] = path;
 
   let screen;
@@ -132,9 +135,6 @@ function Main() {
         nav = true;
       }
       break;
-    case 'privacy':
-      screen = <Privacy />;
-      break;
     case 'new':
       screen = <Editor key={`new-${query.toString()}`} query={query} />;
       break;
@@ -142,10 +142,13 @@ function Main() {
       screen = <Editor key={`edit-${id}`} id={id} query={query} />;
       break;
     case 'entry':
-      screen = <EntryView id={id} />;
+      screen = <EntryView key={id} id={id} query={query} />;
+      break;
+    case 'draw':
+      screen = <DrawPad key={query.toString()} forEntry={query.get('for') ?? undefined} />;
       break;
     case 'bottle':
-      screen = <Bottle />;
+      screen = <Bottle forEntry={query.get('for') ?? undefined} />;
       break;
     case 'scrap':
       screen = <Scrapbook key={id} id={id} />;
@@ -158,20 +161,7 @@ function Main() {
   return (
     <>
       {screen}
-      {nav && <BottomNav current={section === 'settings' ? 'settings' : section ?? ''} onCompose={() => setCompose(true)} />}
-      {compose && (
-        <TemplateSheet
-          onClose={() => setCompose(false)}
-          onBottle={() => {
-            setCompose(false);
-            go('bottle');
-          }}
-          onPick={(t) => {
-            setCompose(false);
-            go(t.id === 'bebas' ? 'new' : `new?template=${t.id}`);
-          }}
-        />
-      )}
+      {nav && <BottomNav current={section === 'settings' ? 'settings' : section ?? ''} onCompose={() => go('new')} />}
     </>
   );
 }

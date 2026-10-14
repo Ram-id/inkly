@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { randomQuestion } from '../../domain/bottle';
 import { TEMPLATES, type Template } from '../../domain/catalog';
 import { SLIPS } from '../../domain/slips';
 import { normalizeTag, wordCount } from '../../domain/stats';
@@ -130,8 +129,37 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
   const done = async () => {
     await flush();
     if (!hasContent(latest.current)) return back('');
-    if (id) back(`entry/${entry.id}`);
+    // a journal started in this session opens on its page; an older one returns to where we came from
+    if (id && query.get('fresh') !== '1') back(`entry/${entry.id}`);
     else go(`entry/${entry.id}`, { replace: true });
+  };
+
+  const drawPen = async () => {
+    await flush();
+    if (!vault.get(latest.current.id)) {
+      // nothing written yet: the drawing becomes its own entry
+      go('draw', { replace: true });
+      return;
+    }
+    if (!id) go(`edit/${latest.current.id}?fresh=1`, { replace: true });
+    go(`draw?for=${latest.current.id}`);
+  };
+
+  const openBottle = async () => {
+    await flush();
+    if (!vault.get(latest.current.id)) {
+      go('bottle', { replace: true });
+      return;
+    }
+    if (!id) go(`edit/${latest.current.id}?fresh=1`, { replace: true });
+    go(`bottle?for=${latest.current.id}`);
+  };
+
+  const stickers = async () => {
+    if (!hasContent(latest.current)) update({ title: latest.current.title || 'Jurnal' });
+    dirty.current = true;
+    await flush();
+    go(`entry/${latest.current.id}?decor=1`, { replace: true });
   };
 
   const decorate = async () => {
@@ -150,7 +178,7 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
           <Icon name="back" />
         </button>
         <h1 class="small muted" style={{ fontWeight: 600, fontSize: '13px' }}>
-          {saved === 'saving' ? 'Menyimpan…' : saved === 'saved' ? 'Tersimpan & terenkripsi ✓' : hasContent(entry) ? 'Belum tersimpan' : ''}
+          {saved === 'saving' ? 'Menyimpan…' : saved === 'saved' ? 'Tersimpan ✓' : hasContent(entry) ? 'Belum tersimpan' : ''}
         </h1>
         <button class="btn small" onClick={done}>
           Selesai
@@ -173,22 +201,7 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
           />
         </label>
 
-        {entry.slip ? (
-          <SlipCard slip={entry.slip} compact />
-        ) : (
-          !id &&
-          !hasContent(entry) && (
-            <button class="card flat row" style={{ gap: '12px', textAlign: 'left', borderStyle: 'dashed' }} onClick={() => go('bottle', { replace: true })}>
-              <Jar size={40} />
-              <span class="grow small">
-                <b>Ambil kertas dari botol perasaan</b>
-                <span class="muted" style={{ display: 'block' }}>
-                  Pilih warna sesuai perasaanmu, lalu tulis dari isi kertasnya.
-                </span>
-              </span>
-            </button>
-          )
-        )}
+        {entry.slip && <SlipCard slip={entry.slip} compact />}
 
         <div>
           <input class="editor-title" placeholder="Judul" value={entry.title} onInput={(e) => update({ title: e.currentTarget.value })} aria-label="Judul" />
@@ -248,7 +261,6 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
               {photoBusy ? <div class="spinner" /> : <Icon name="plus" size={26} />}
             </button>
           </div>
-          <p class="tiny faint">Lokasi GPS & data kamera dihapus, lalu foto dienkripsi sebelum disimpan.</p>
           <input ref={fileRef} type="file" accept="image/*" multiple class="sr-only" onChange={(e) => addPhotos(e.currentTarget.files)} />
         </div>
       </div>
@@ -258,20 +270,20 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
           <button class="tool" onClick={() => fileRef.current?.click()}>
             <Icon name="image" size={19} /> Foto
           </button>
+          <button class="tool" onClick={drawPen}>
+            <Icon name="pen" size={19} /> Pena
+          </button>
+          <button class="tool" onClick={stickers}>
+            <Icon name="heart" size={19} /> Tempel
+          </button>
           <button class="tool" onClick={decorate}>
             <Icon name="sparkle" size={19} /> Hias
           </button>
           <button class="tool" onClick={() => setSheet('template')}>
             <Icon name="file" size={19} /> Template
           </button>
-          <button
-            class="tool"
-            onClick={() => {
-              const p = randomQuestion(entry.mood).text;
-              update({ body: entry.body.trim() ? `${entry.body.trimEnd()}\n\n${p}\n` : `${p}\n` });
-            }}
-          >
-            <Icon name="shuffle" size={19} /> Ide
+          <button class="tool" onClick={openBottle}>
+            <Jar size={21} /> Botol
           </button>
           <button class={`tool ${entry.favorite ? 'active' : ''}`} onClick={() => update({ favorite: !entry.favorite })} style={entry.favorite ? { color: 'var(--warn)' } : undefined}>
             <Icon name="star" size={19} solid={entry.favorite} /> Favorit
@@ -292,32 +304,16 @@ export function Editor({ id, query }: { id?: string; query: URLSearchParams }) {
   );
 }
 
-export function TemplateSheet({ onClose, onPick, onBottle }: { onClose: () => void; onPick: (t: Template) => void; onBottle?: () => void }) {
+export function TemplateSheet({ onClose, onPick }: { onClose: () => void; onPick: (t: Template) => void }) {
   return (
     <Sheet onClose={onClose}>
-      <h2>{onBottle ? 'Mulai menulis' : 'Mulai dari template'}</h2>
-      <p class="small muted" style={{ marginBottom: '12px' }}>
-        Pilih kerangka tulisan, nanti bisa kamu ubah sesukamu.
-      </p>
-      {onBottle && (
-        <button class="card tinted row" style={{ gap: '12px', textAlign: 'left', width: '100%', marginBottom: '12px' }} onClick={onBottle}>
-          <Jar size={44} />
-          <span class="grow">
-            <b>Ambil kertas dari botol</b>
-            <span class="small muted" style={{ display: 'block' }}>
-              Afirmasi, pertanyaan, atau langkah kecil sesuai perasaanmu.
-            </span>
-          </span>
-          <Icon name="next" size={18} />
-        </button>
-      )}
+      <h2 style={{ marginBottom: '12px' }}>Template</h2>
       <div class="list">
         {TEMPLATES.map((t) => (
           <button key={t.id} class="list-item" onClick={() => onPick(t)}>
             <span style={{ fontSize: '24px' }}>{t.emoji}</span>
             <span class="label">
               <b>{t.name}</b>
-              <small>{t.body ? t.body.split('\n')[0] : 'Halaman kosong'}</small>
             </span>
             <Icon name="next" size={18} />
           </button>

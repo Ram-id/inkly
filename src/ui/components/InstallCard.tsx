@@ -56,7 +56,6 @@ export function InstallCard({ always = false }: { always?: boolean }) {
         <p class="bold">Pasang Inkly di layar utama</p>
         {deferred ? (
           <>
-            <p class="small muted">Buka seperti aplikasi biasa dan tetap bisa dipakai tanpa internet.</p>
             <button
               class="btn small"
               style={{ alignSelf: 'flex-start' }}

@@ -8,6 +8,8 @@ import { services } from '../services';
 import { busy, errorMessage, toast } from '../components/feedback';
 import { MIN_PASSWORD, PasswordInput, StrengthMeter, downloadText } from '../components/common';
 import { RecoveryWords } from '../components/RecoveryWords';
+import { Jar } from '../components/Paper';
+import { Inky } from '../components/Inky';
 
 type Step = 'welcome' | 'password' | 'words' | 'verify' | 'pin' | 'name' | 'login' | 'forgot' | 'restore';
 
@@ -16,7 +18,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [words, setWords] = useState<string[]>([]);
 
   const finish = async () => {
-    await services.refreshSync();
+    // Whatever happens here, leave onboarding: if the journal got locked meanwhile,
+    // the app simply shows the unlock screen next.
+    await services.refreshSync().catch(() => {});
     go('', { replace: true });
     onDone();
   };
@@ -54,41 +58,15 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 function Welcome({ onNew, onLogin, onRestore }: { onNew: () => void; onLogin: () => void; onRestore: () => void }) {
   return (
     <main class="screen no-nav stack-lg">
-      <div class="hero">
-        <div class="brand">inkly</div>
-        <h1>Ruang jurnal yang hanya bisa kamu baca.</h1>
-        <p class="muted" style={{ marginTop: '10px' }}>
-          Tulis, hias, dan simpan cerita harianmu. Semuanya dikunci di HP-mu sebelum disimpan, jadi tidak ada orang lain, termasuk pembuat aplikasi ini, yang bisa membacanya.
-        </p>
-      </div>
-      <div class="card stack">
-        <div class="feature">
-          <span class="icon-badge">
-            <Icon name="shield" size={19} />
-          </span>
-          <div>
-            <p class="bold">Terenkripsi end-to-end</p>
-            <p class="small muted">Kuncinya hanya ada di perangkatmu, tidak pernah dikirim ke server.</p>
-          </div>
+      <div class="hero center stack" style={{ alignItems: 'center', gap: '14px', paddingTop: '40px' }}>
+        <div class="row" style={{ alignItems: 'flex-end', gap: '0' }}>
+          <Inky size={96} bounce face="wink" />
+          <Jar size={150} />
         </div>
-        <div class="feature">
-          <span class="icon-badge">
-            <Icon name="phone" size={19} />
-          </span>
-          <div>
-            <p class="bold">Jalan offline</p>
-            <p class="small muted">Pasang ke layar utama HP dan menulis kapan saja, tanpa internet.</p>
-          </div>
+        <div class="brand" style={{ fontSize: '42px' }}>
+          inkly
         </div>
-        <div class="feature">
-          <span class="icon-badge">
-            <Icon name="cloud" size={19} />
-          </span>
-          <div>
-            <p class="bold">Sinkron antar perangkat (opsional)</p>
-            <p class="small muted">Server hanya menyimpan data acak yang tidak bisa dibaca.</p>
-          </div>
-        </div>
+        <h1 style={{ marginTop: 0 }}>Ruang kecil untuk cerita harianmu.</h1>
       </div>
       <div class="stack">
         <button class="btn block" onClick={onNew}>
@@ -133,9 +111,6 @@ function CreatePassword({ onBack, onCreated }: { onBack: () => void; onCreated: 
         <h1>Buat password</h1>
       </header>
       <form class="stack-lg" onSubmit={submit}>
-        <p class="muted">
-          Password ini membuka jurnalmu. Password <b>tidak dikirim ke mana pun</b>, jadi tidak ada yang bisa meresetnya untukmu. Gunakan kalimat yang mudah kamu ingat, misalnya <i>“kopi susu di teras jam 7 pagi”</i>.
-        </p>
         <label class="field">
           <span>Password</span>
           <PasswordInput value={pw} onInput={setPw} autoComplete="new-password" autoFocus />
@@ -160,15 +135,9 @@ function ShowWords({ words, onNext }: { words: string[]; onNext: () => void }) {
     <main class="screen no-nav stack-lg">
       <div class="hero" style={{ paddingTop: '12px' }}>
         <div class="hero-art">🔑</div>
-        <h1 style={{ fontSize: '24px' }}>Simpan recovery key-mu</h1>
-        <p class="muted" style={{ marginTop: '8px' }}>
-          24 kata ini adalah satu-satunya cara membuka jurnal kalau kamu lupa password. Tulis di kertas dan simpan di tempat aman. Jangan difoto atau dibagikan ke siapa pun.
-        </p>
+        <h1 style={{ fontSize: '24px' }}>Simpan 24 kata ini</h1>
       </div>
       <RecoveryWords words={words} />
-      <div class="card warn small">
-        Kalau password <b>dan</b> 24 kata ini hilang, jurnalmu tidak bisa dibuka lagi oleh siapa pun. Itu konsekuensi dari privasi penuh.
-      </div>
       <button
         class="btn block secondary"
         onClick={() => downloadText('inkly-recovery-key.txt', `Recovery key Inkly (simpan di tempat aman):\n\n${words.map((w, i) => `${i + 1}. ${w}`).join('\n')}\n`, 'text/plain')}
@@ -177,7 +146,7 @@ function ShowWords({ words, onNext }: { words: string[]; onNext: () => void }) {
       </button>
       <label class="row" style={{ alignItems: 'flex-start', gap: '10px' }}>
         <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.currentTarget.checked)} style={{ width: '22px', height: '22px', marginTop: '1px' }} />
-        <span class="small">Saya sudah menyimpan 24 kata ini dengan aman.</span>
+        <span class="small">Sudah kusimpan.</span>
       </label>
       <button class="btn block" disabled={!saved} onClick={onNext}>
         Lanjut
@@ -212,7 +181,6 @@ function VerifyWords({ words, onBack, onNext }: { words: string[]; onBack: () =>
         <h1>Cek catatanmu</h1>
       </header>
       <form class="stack-lg" onSubmit={check}>
-        <p class="muted">Ketik kata berikut dari recovery key-mu untuk memastikan catatannya benar.</p>
         {picks.map((p, i) => (
           <label class="field" key={p}>
             <span>Kata ke-{p + 1}</span>
@@ -244,7 +212,7 @@ function SetupPin({ onNext }: { onNext: () => void }) {
   const save = async (e: Event) => {
     e.preventDefault();
     if (!isValidPin(pin)) return setErr('PIN harus 6 angka.');
-    await busy('Menyiapkan PIN…', () => enablePin(services.vault, pin));
+    if (services.vault.unlocked) await busy('Menyiapkan PIN…', () => enablePin(services.vault, pin)).catch(() => {});
     onNext();
   };
   return (
@@ -252,10 +220,7 @@ function SetupPin({ onNext }: { onNext: () => void }) {
       <form class="stack-lg" onSubmit={save}>
         <div class="hero" style={{ paddingTop: '12px' }}>
           <div class="hero-art">🔢</div>
-          <h1 style={{ fontSize: '24px' }}>Buka cepat dengan PIN?</h1>
-          <p class="muted" style={{ marginTop: '8px' }}>
-            Supaya tidak perlu mengetik password setiap kali membuka Inkly di HP ini. Setelah 5 kali salah, PIN dinonaktifkan dan kamu masuk dengan password.
-          </p>
+          <h1 style={{ fontSize: '24px' }}>Pakai PIN?</h1>
         </div>
         <label class="field">
           <span>PIN 6 angka</span>
@@ -275,7 +240,7 @@ function SetupPin({ onNext }: { onNext: () => void }) {
           Aktifkan PIN
         </button>
         <button class="btn block ghost" type="button" onClick={onNext}>
-          Lewati, pakai password saja
+          Lewati
         </button>
       </form>
     </main>
@@ -286,7 +251,7 @@ function AskName({ onNext }: { onNext: () => void }) {
   const [name, setName] = useState('');
   const save = async (e: Event) => {
     e.preventDefault();
-    if (name.trim()) await services.vault.saveSettings({ displayName: name.trim() });
+    if (name.trim() && services.vault.unlocked) await services.vault.saveSettings({ displayName: name.trim() }).catch(() => {});
     onNext();
   };
   return (
@@ -295,7 +260,6 @@ function AskName({ onNext }: { onNext: () => void }) {
         <div class="hero" style={{ paddingTop: '12px' }}>
           <div class="hero-art">👋</div>
           <h1 style={{ fontSize: '24px' }}>Mau dipanggil siapa?</h1>
-          <p class="muted" style={{ marginTop: '8px' }}>Nama ini juga ikut dienkripsi, hanya untuk sapaan di beranda.</p>
         </div>
         <input class="input" value={name} placeholder="Nama panggilan" onInput={(e) => setName(e.currentTarget.value)} />
         <button class="btn block" type="submit">
@@ -332,7 +296,6 @@ function Login({ onBack, onForgot, onDone }: { onBack: () => void; onForgot: () 
         <h1>Masuk</h1>
       </header>
       <form class="stack-lg" onSubmit={submit}>
-        <p class="muted">Masuk dengan akun sinkronisasi untuk membuka jurnalmu di perangkat ini.</p>
         <label class="field">
           <span>Email</span>
           <input class="input" type="email" autoComplete="email" value={email} onInput={(e) => setEmail(e.currentTarget.value)} />
@@ -396,9 +359,6 @@ function ForgotAccount({ onBack, onDone }: { onBack: () => void; onDone: () => v
       </header>
       {!sent ? (
         <form class="stack-lg" onSubmit={send}>
-          <p class="muted">
-            Kami akan mengirim kode ke emailmu untuk membuktikan ini akunmu. Setelah itu kamu perlu <b>24 kata recovery key</b> untuk membuka isi jurnal, karena email saja tidak bisa membukanya.
-          </p>
           <label class="field">
             <span>Email akun</span>
             <input class="input" type="email" autoComplete="email" value={email} onInput={(e) => setEmail(e.currentTarget.value)} />
@@ -458,7 +418,6 @@ function RestoreBackup({ onBack, onDone }: { onBack: () => void; onDone: () => v
         <h1>Pulihkan backup</h1>
       </header>
       <form class="stack-lg" onSubmit={submit}>
-        <p class="muted">Pilih file backup Inkly (.inkly), lalu masukkan password saat backup dibuat atau 24 kata recovery key.</p>
         <label class="btn block secondary">
           <Icon name="file" size={18} /> {file ? file.name : 'Pilih file backup'}
           <input type="file" accept=".inkly,application/json" class="sr-only" onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)} />

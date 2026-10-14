@@ -5,6 +5,8 @@ import { Icon, type IconName } from '../icons';
 import { back, go } from '../router';
 import { services } from '../services';
 import { PaperRoll } from './Paper';
+import { Inky, type InkyFace } from './Inky';
+import { MOOD_BY_ID } from '../../domain/catalog';
 
 export function TopBar({
   title,
@@ -48,7 +50,7 @@ export function BottomNav({ current, onCompose }: { current: string; onCompose: 
         {btn(NAV[0])}
         {btn(NAV[1])}
         <button class="fab" aria-label="Tulis jurnal baru" onClick={onCompose}>
-          <Icon name="plus" size={28} stroke-width={2.4} />
+          <Icon name="pen" size={26} stroke-width={2.3} />
         </button>
         {btn(NAV[2])}
         {btn(NAV[3])}
@@ -134,7 +136,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
   const d = new Date(entry.date);
   const snippet = entry.body.replace(/\s+/g, ' ').trim();
   return (
-    <button class="entry-card" onClick={() => go(`entry/${entry.id}`)}>
+    <button class="entry-card" style={entry.mood ? { '--paper': MOOD_BY_ID[entry.mood].paper } : undefined} onClick={() => go(`entry/${entry.id}`)}>
       <div class="date-block">
         <div class="d">{d.getDate()}</div>
         <div class="w">{WEEKDAY[d.getDay()]}</div>
@@ -176,10 +178,10 @@ export function SecureImg({ id, thumb, alt = '' }: { id: string; thumb?: string;
   return src ? <img src={src} alt={alt} /> : <div class="spinner" style={{ margin: 'auto' }} />;
 }
 
-export function Empty({ emoji, title, children }: { emoji: string; title: string; children?: ComponentChildren }) {
+export function Empty({ title, children, face = 'happy' }: { emoji?: string; title: string; children?: ComponentChildren; face?: InkyFace }) {
   return (
     <div class="empty stack" style={{ alignItems: 'center' }}>
-      <div class="e">{emoji}</div>
+      <Inky size={86} face={face} bounce />
       <p class="bold">{title}</p>
       {children}
     </div>

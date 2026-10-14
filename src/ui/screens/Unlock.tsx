@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { getMeta } from '../../storage/db';
 import { hasPin, unlockWithPin, WrongPinError } from '../../storage/pin';
 import { Icon } from '../icons';
+import { Inky } from '../components/Inky';
 import { services } from '../services';
 import { busy, errorMessage, toast } from '../components/feedback';
 import { MIN_PASSWORD, PasswordInput, StrengthMeter } from '../components/common';
@@ -29,6 +30,7 @@ export function Unlock() {
 function LockHeader({ subtitle }: { subtitle: string }) {
   return (
     <div class="center stack" style={{ alignItems: 'center', gap: '8px' }}>
+      <Inky face="sleepy" size={96} bounce />
       <div class="brand" style={{ fontSize: '40px' }}>
         inkly
       </div>

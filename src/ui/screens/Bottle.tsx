@@ -3,7 +3,7 @@ import { drawSlip } from '../../domain/bottle';
 import { MOOD_BY_ID, MOODS } from '../../domain/catalog';
 import type { MoodId, Slip } from '../../domain/types';
 import { Icon } from '../icons';
-import { go } from '../router';
+import { back, go } from '../router';
 import { useVault } from '../services';
 import { TopBar } from '../components/common';
 import { Jar, PaperRoll, SlipCard } from '../components/Paper';
@@ -16,7 +16,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * The feelings bottle: pick the colour that matches how you feel, the jar shakes, one rolled
  * paper of that colour comes out and unrolls into an affirmation, question or small step.
  */
-export function Bottle() {
+export function Bottle({ forEntry }: { forEntry?: string }) {
   const vault = useVault();
   const [phase, setPhase] = useState<Phase>('idle');
   const [pick, setPick] = useState<MoodId | null>(null);
@@ -39,12 +39,12 @@ export function Bottle() {
   };
 
   const m = pick ? MOOD_BY_ID[pick] : null;
+  const target = forEntry ? vault.get(forEntry) : undefined;
 
   return (
     <main class="screen no-nav bottle-screen">
       <TopBar title="Botol perasaan" />
       <div class="stack-lg">
-        <p class="muted center">Apa yang sedang kamu rasakan? Pilih warnanya, lalu ambil satu gulungan kertas dari botol.</p>
 
         <div class="jar-stage">
           <Jar shaking={phase === 'shake'} dim={phase === 'idle' ? null : pick} />
@@ -58,7 +58,6 @@ export function Bottle() {
             <button key={md.id} class={`feel-btn ${pick === md.id ? 'on' : ''}`} onClick={() => draw(md.id)} style={{ '--paper': md.paper, '--edge': md.edge }}>
               <PaperRoll emotion={md.id} />
               <span class="feel-label">{md.label}</span>
-              <span class="feel-hint">{md.hint}</span>
             </button>
           ))}
         </div>
@@ -69,9 +68,21 @@ export function Bottle() {
           <div class="slip-reveal">
             <SlipCard slip={slip}>
               <div class="stack" style={{ marginTop: '18px' }}>
-                <button class="btn block" onClick={() => go(`new?slip=${encodeURIComponent(slip.id)}`, { replace: true })}>
-                  <Icon name="edit" size={18} /> Tulis jurnal dari kertas ini
-                </button>
+                {target ? (
+                  <button
+                    class="btn block"
+                    onClick={async () => {
+                      await vault.saveEntry({ ...target, slip: { ...slip }, mood: slip.emotion });
+                      back(`edit/${target.id}`);
+                    }}
+                  >
+                    <Icon name="heart" size={18} /> Pakai kertas ini
+                  </button>
+                ) : (
+                  <button class="btn block" onClick={() => go(`new?slip=${encodeURIComponent(slip.id)}`, { replace: true })}>
+                    <Icon name="edit" size={18} /> Tulis jurnal dari kertas ini
+                  </button>
+                )}
                 <div class="row">
                   <button class="btn secondary grow" onClick={() => draw(slip.emotion)}>
                     Ambil lagi

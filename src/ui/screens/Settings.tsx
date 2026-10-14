@@ -66,10 +66,9 @@ export function Settings() {
       </section>
 
       <section class="stack">
-        <h2 class="section-title">Keamanan & privasi</h2>
+        <h2 class="section-title">Akses</h2>
         <div class="list">
-          <Item icon="shield" label="Keamanan" hint="Password, PIN, recovery key, kunci otomatis" onClick={() => go('settings/security')} />
-          <Item icon="eye" label="Apa yang bisa dilihat developer?" hint="Penjelasan jujur tentang privasimu" onClick={() => go('privacy')} />
+          <Item icon="lock" label="Password & PIN" onClick={() => go('settings/security')} />
         </div>
       </section>
 
@@ -80,11 +79,11 @@ export function Settings() {
             <Item
               icon="cloud"
               label="Sinkronisasi"
-              hint={linked ? syncLabel(status?.state, status?.lastSyncAt ?? null) : 'Mati · jurnal hanya ada di HP ini'}
+              hint={linked ? syncLabel(status?.state, status?.lastSyncAt ?? null) : 'Mati'}
               onClick={() => go('settings/sync')}
             />
           )}
-          <Item icon="download" label="Backup & ekspor" hint="File backup terenkripsi, pulihkan, ekspor teks" onClick={() => go('settings/backup')} />
+          <Item icon="download" label="Backup & ekspor" onClick={() => go('settings/backup')} />
           <Item icon="bell" label="Pengingat menulis" hint={`Setiap hari pukul ${vault.settings.reminderTime}`} onClick={() => go('settings/reminder')} />
         </div>
       </section>
@@ -108,7 +107,7 @@ export function Settings() {
       <button class="btn block secondary" onClick={() => vault.lock()}>
         <Icon name="lock" size={18} /> Kunci jurnal sekarang
       </button>
-      <p class="tiny faint center">Inkly {__APP_VERSION__} · enkripsi XChaCha20-Poly1305 + Argon2id</p>
+      <p class="tiny faint center">Inkly {__APP_VERSION__}</p>
     </main>
   );
 }
@@ -133,7 +132,7 @@ export function SecuritySettings() {
 
   return (
     <main class="screen no-nav stack-lg">
-      <TopBar title="Keamanan" backTo="settings" />
+      <TopBar title="Password & PIN" backTo="settings" />
       <section class="stack">
         <h2 class="section-title">Membuka jurnal</h2>
         <div class="list">
@@ -141,7 +140,6 @@ export function SecuritySettings() {
           <Item
             icon="grid"
             label="Buka cepat dengan PIN"
-            hint="Hanya berlaku di perangkat ini"
             right={
               <Switch
                 label="PIN"
@@ -160,7 +158,7 @@ export function SecuritySettings() {
         </div>
       </section>
       <section class="stack">
-        <h2 class="section-title">Kunci otomatis saat ditinggal</h2>
+        <h2 class="section-title">Kunci otomatis</h2>
         <div class="segmented">
           {LOCK_OPTIONS.map((o) => (
             <button key={o.v} class={vault.prefs.autoLockMinutes === o.v ? 'on' : ''} onClick={() => vault.savePrefs({ autoLockMinutes: o.v })}>
@@ -168,13 +166,12 @@ export function SecuritySettings() {
             </button>
           ))}
         </div>
-        <p class="tiny faint">Jurnal terkunci dan kuncinya dihapus dari memori setelah aplikasi tidak dipakai selama waktu ini.</p>
       </section>
       <section class="stack">
         <h2 class="section-title">Recovery key</h2>
         <div class="list">
-          <Item icon="eye" label="Lihat recovery key" hint="Perlu password" onClick={() => setSheet('reveal')} />
-          <Item icon="refresh" label="Buat recovery key baru" hint="Kalau 24 kata lama mungkin dilihat orang lain" onClick={() => setSheet('rotate')} />
+          <Item icon="eye" label="Lihat recovery key" onClick={() => setSheet('reveal')} />
+          <Item icon="refresh" label="Buat recovery key baru" onClick={() => setSheet('rotate')} />
         </div>
       </section>
 
@@ -213,7 +210,6 @@ function ChangePasswordSheet({ onClose }: { onClose: () => void }) {
     <Sheet onClose={onClose}>
       <form class="stack" onSubmit={save}>
         <h2>Ganti password</h2>
-        <p class="small muted">Isi jurnal tidak perlu dienkripsi ulang. Hanya “gembok” kuncinya yang diganti.</p>
         <PasswordInput value={cur} onInput={setCur} placeholder="Password sekarang" />
         <PasswordInput value={pw} onInput={setPw} placeholder="Password baru" autoComplete="new-password" />
         <StrengthMeter pw={pw} />
@@ -286,7 +282,7 @@ function RecoverySheet({ rotate, onClose }: { rotate: boolean; onClose: () => vo
       {words ? (
         <div class="stack">
           <h2>{rotate ? 'Recovery key baru' : 'Recovery key-mu'}</h2>
-          {rotate && <p class="card warn small">24 kata lama sudah tidak berlaku. Simpan 24 kata baru ini di tempat aman.</p>}
+          
           <RecoveryWords words={words} />
           <button class="btn block" onClick={onClose}>
             Sudah saya simpan
@@ -295,7 +291,6 @@ function RecoverySheet({ rotate, onClose }: { rotate: boolean; onClose: () => vo
       ) : (
         <form class="stack" onSubmit={submit}>
           <h2>{rotate ? 'Buat recovery key baru' : 'Lihat recovery key'}</h2>
-          <p class="small muted">Masukkan password untuk melanjutkan. Pastikan tidak ada orang yang melihat layarmu.</p>
           <PasswordInput value={pw} onInput={setPw} autoFocus />
           {err && <p class="error-text">{err}</p>}
           <button class="btn block" type="submit" disabled={!pw}>
@@ -362,12 +357,6 @@ export function SyncSettings() {
         <TopBar title="Sinkronisasi" backTo="settings" />
         {mode === null && (
           <>
-            <div class="card tinted stack">
-              <p class="bold">Simpan jurnal di cloud, tetap privat</p>
-              <p class="small muted">
-                Jurnal dikunci di HP ini lalu dikirim sebagai data acak. Server hanya bisa melihat email, jumlah & ukuran data, dan waktu sinkron, tidak pernah isi jurnal. Gunakan password yang sama dengan password jurnalmu.
-              </p>
-            </div>
             <button class="btn block" onClick={() => setMode('register')}>
               Buat akun sinkronisasi
             </button>
@@ -380,7 +369,7 @@ export function SyncSettings() {
           <div class="stack">
             <div class="card stack">
               <p class="bold">📬 Cek emailmu</p>
-              <p class="small muted">Kami mengirim tautan konfirmasi ke {email}. Klik tautannya, lalu kembali ke sini dan ketuk tombol di bawah.</p>
+              <p class="small muted">{email}</p>
             </div>
             <PasswordInput value={pw} onInput={setPw} placeholder="Password jurnal" />
             {err && <p class="error-text">{err}</p>}
@@ -410,9 +399,6 @@ export function SyncSettings() {
               <span>{mode === 'register' ? 'Password jurnalmu saat ini' : 'Password akun'}</span>
               <PasswordInput value={pw} onInput={setPw} />
             </label>
-            {mode === 'signin' && (
-              <p class="tiny faint">Kalau akun ini sudah punya jurnal dari perangkat lain, jurnal di HP ini akan digabungkan ke sana dan password akun menjadi password jurnalmu.</p>
-            )}
             {err && <p class="error-text">{err}</p>}
             <button class="btn block" type="submit" disabled={!email || !pw}>
               {mode === 'register' ? 'Buat akun' : 'Masuk & hubungkan'}
@@ -470,9 +456,8 @@ export function SyncSettings() {
         <Item
           icon="logout"
           label="Putuskan perangkat ini"
-          hint="Jurnal tetap ada di HP ini dan di server"
           onClick={async () => {
-            if (!(await confirmDialog({ title: 'Putuskan sinkronisasi?', body: 'HP ini berhenti sinkron. Jurnal yang sudah ada tetap tersimpan di sini dan di server.', ok: 'Putuskan' }))) return;
+            if (!(await confirmDialog({ title: 'Putuskan sinkronisasi?', ok: 'Putuskan' }))) return;
             await account.unlink();
             await services.refreshSync();
           }}
@@ -480,13 +465,11 @@ export function SyncSettings() {
         <Item
           icon="trash"
           danger
-          label="Hapus akun & data di server"
-          hint="Jurnal di HP ini tidak ikut terhapus"
+          label="Hapus akun sinkronisasi"
           onClick={async () => {
             if (
               !(await confirmDialog({
                 title: 'Hapus akun sinkronisasi?',
-                body: 'Semua data terenkripsi di server dan akunmu dihapus permanen. Perangkat lain tidak akan bisa sinkron lagi. Jurnal di HP ini tetap ada.',
                 ok: 'Hapus akun',
                 danger: true
               }))
@@ -495,7 +478,7 @@ export function SyncSettings() {
             try {
               await busy('Menghapus akun…', () => account.deleteAccount());
               await services.refreshSync();
-              toast('Akun dan data server sudah dihapus.');
+              toast('Akun sinkronisasi sudah dihapus.');
             } catch (e) {
               toast(errorMessage(e), 'error');
             }
@@ -520,29 +503,25 @@ export function BackupSettings() {
         <div class="list">
           <Item
             icon="download"
-            label="Unduh backup terenkripsi"
-            hint="File .inkly, hanya bisa dibuka dengan password atau 24 kata"
+            label="Unduh file backup"
             onClick={async () => {
               const json = await busy('Menyiapkan backup…', () => vault.exportBackup());
               downloadText(`inkly-backup-${stamp()}.inkly`, json);
             }}
           />
-          <Item icon="upload" label="Pulihkan / gabungkan backup" hint="Jurnal yang lebih baru tetap dipertahankan" onClick={() => setImporting(true)} />
+          <Item icon="upload" label="Pulihkan / gabungkan backup" onClick={() => setImporting(true)} />
         </div>
-        <p class="tiny faint">Backup berisi jurnal & foto yang tersimpan di HP ini. Foto dari perangkat lain yang belum pernah dibuka di sini tidak ikut.</p>
       </section>
       <section class="stack">
-        <h2 class="section-title">Ekspor tanpa enkripsi</h2>
+        <h2 class="section-title">Ekspor</h2>
         <div class="list">
           <Item
             icon="file"
             label="Ekspor sebagai teks (Markdown)"
-            hint="Bisa dibaca siapa saja yang memegang filenya"
             onClick={async () => {
               const ok = await confirmDialog({
-                title: 'Ekspor tanpa enkripsi?',
-                body: 'File ini berisi seluruh isi jurnalmu dalam bentuk teks biasa. Siapa pun yang memegang file ini bisa membacanya.',
-                ok: 'Saya mengerti, ekspor'
+                title: 'Ekspor sebagai teks?',
+                ok: 'Ekspor'
               });
               if (ok) downloadText(`inkly-jurnal-${stamp()}.md`, vault.exportMarkdown(), 'text/markdown');
             }}
@@ -556,11 +535,10 @@ export function BackupSettings() {
             icon="trash"
             danger
             label="Hapus semua data di HP ini"
-            hint="Server & perangkat lain tidak terpengaruh"
             onClick={async () => {
               const ok = await confirmDialog({
                 title: 'Hapus semua data di HP ini?',
-                body: 'Semua jurnal, foto, dan kunci di perangkat ini dihapus. Tanpa sinkronisasi atau file backup, jurnal tidak bisa dikembalikan.',
+                body: 'Tidak bisa dibatalkan.',
                 ok: 'Hapus semuanya',
                 danger: true
               });
@@ -652,9 +630,6 @@ export function ReminderSettings() {
   return (
     <main class="screen no-nav stack-lg">
       <TopBar title="Pengingat menulis" backTo="settings" />
-      <p class="muted">
-        Pengingat dipasang lewat aplikasi kalender di HP-mu, jadi tetap muncul walau Inkly tertutup, dan tidak butuh server. Isi pengingatnya umum saja, tidak memuat isi jurnal.
-      </p>
       <label class="field">
         <span>Jam pengingat</span>
         <input
@@ -675,53 +650,6 @@ export function ReminderSettings() {
       >
         <Icon name="bell" size={18} /> Tambahkan ke kalender HP
       </button>
-      <p class="tiny faint">Di beranda, Inkly juga mengingatkan kalau kamu belum menulis hari ini.</p>
-    </main>
-  );
-}
-
-// ------------------------------------------------------------------ privacy explainer
-
-export function Privacy() {
-  const rows: [string, string][] = [
-    ['Judul, isi, mood, tag, tanggal jurnal', 'Tidak bisa dilihat'],
-    ['Foto & hiasan scrapbook', 'Tidak bisa dilihat'],
-    ['Nama panggilan & pengaturan', 'Tidak bisa dilihat'],
-    ['Password & 24 kata recovery key', 'Tidak pernah dikirim'],
-    ['Email akun sinkronisasi', 'Terlihat (untuk login)'],
-    ['Jumlah & perkiraan ukuran data', 'Terlihat'],
-    ['Waktu kamu sinkron', 'Terlihat']
-  ];
-  return (
-    <main class="screen no-nav stack-lg">
-      <TopBar title="Privasi" backTo="settings" />
-      <div class="stack">
-        <h2 class="serif" style={{ fontSize: '24px' }}>
-          Apa yang bisa dilihat developer?
-        </h2>
-        <p class="muted">
-          Semua isi jurnal dikunci (dienkripsi) di HP-mu dengan kunci yang hanya terbuka oleh password atau 24 kata recovery key-mu. Server hanya menerima data acak. Developer bisa melihat servernya, tapi tidak punya kuncinya.
-        </p>
-      </div>
-      <div class="list">
-        {rows.map(([k, v]) => (
-          <div class="list-item" key={k}>
-            <span class="label">{k}</span>
-            <span class="small bold" style={{ color: v.startsWith('Terlihat') ? 'var(--warn)' : 'var(--good)', textAlign: 'right' }}>
-              {v}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div class="card stack">
-        <p class="bold">Hal yang perlu kamu tahu</p>
-        <ul class="small muted" style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '6px' }}>
-          <li>Kalau password <b>dan</b> recovery key hilang, jurnal tidak bisa dibuka oleh siapa pun, termasuk developer.</li>
-          <li>Password yang lemah bisa ditebak oleh orang yang mencuri data server. Gunakan kalimat panjang yang unik.</li>
-          <li>Inkly adalah aplikasi web: keamanannya bergantung pada kode yang kamu muat. Kode Inkly bisa diperiksa di repositori GitHub-nya.</li>
-          <li>Orang yang memegang HP-mu dalam keadaan jurnal terbuka bisa membacanya. Aktifkan kunci otomatis.</li>
-        </ul>
-      </div>
     </main>
   );
 }

@@ -1,29 +1,10 @@
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Photo, ScrapbookLayout, ScrapItem } from '../../domain/types';
-
-interface Gesture {
-  itemId: string;
-  pointers: Map<number, { x: number; y: number }>;
-  startPointers: Map<number, { x: number; y: number }>;
-  startItem: ScrapItem;
-}
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-function centroid(ps: Map<number, { x: number; y: number }>) {
-  let x = 0;
-  let y = 0;
-  for (const p of ps.values()) {
-    x += p.x;
-    y += p.y;
-  }
-  return { x: x / ps.size, y: y / ps.size };
-}
-
-function spread(ps: Map<number, { x: number; y: number }>) {
-  const [a, b] = [...ps.values()];
-  return { dist: Math.hypot(b.x - a.x, b.y - a.y), angle: (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI };
-}
+import type { Stroke } from '../../media/ink';
+import { STAMP_BY_ID, stampUrl, clearStampCache } from '../../media/stamps';
+import { InkSurface } from './InkSurface';
+import type { InkSettings } from './InkTools';
+import { useItemGestures } from './itemGestures';
 
 /**
  * Scrapbook page. Positions are stored as fractions of the page and sizes use container
@@ -36,7 +17,10 @@ export function ScrapCanvas({
   readOnly,
   selected,
   onSelect,
-  onChange
+  onChange,
+  inkMode,
+  onInk,
+  onTapEmpty
 }: {
   layout: ScrapbookLayout;
   photos: Photo[];
@@ -44,103 +28,40 @@ export function ScrapCanvas({
   selected?: string | null;
   onSelect?: (id: string | null) => void;
   onChange?: (items: ScrapItem[]) => void;
+  /** when set, the page is in pen mode and finger strokes draw instead of moving items */
+  inkMode?: InkSettings | null;
+  onInk?: (strokes: Stroke[]) => void;
+  /** tap on an empty spot (fractions of width/height), e.g. to place a stamp */
+  onTapEmpty?: (x: number, y: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const gesture = useRef<Gesture | null>(null);
-  const [live, setLive] = useState<ScrapItem | null>(null);
-
-  const items = layout.items.map((it) => (live && it.id === live.id ? live : it)).sort((a, b) => a.z - b.z);
-
-  const restart = (g: Gesture, current: ScrapItem) => {
-    g.startPointers = new Map(g.pointers);
-    g.startItem = current;
-  };
-
-  const onItemDown = (e: PointerEvent, item: ScrapItem) => {
-    if (readOnly) return;
-    e.stopPropagation();
-    ref.current!.setPointerCapture(e.pointerId);
-    onSelect?.(item.id);
-    const g = gesture.current;
-    if (g && g.itemId === item.id) {
-      g.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      restart(g, live ?? item);
-      return;
-    }
-    const pointers = new Map([[e.pointerId, { x: e.clientX, y: e.clientY }]]);
-    gesture.current = { itemId: item.id, pointers, startPointers: new Map(pointers), startItem: item };
-    setLive(item);
-  };
-
-  const onCanvasDown = (e: PointerEvent) => {
-    if (readOnly) return;
-    const g = gesture.current;
-    if (g && g.pointers.size === 1) {
-      // second finger anywhere on the page joins the pinch
-      ref.current!.setPointerCapture(e.pointerId);
-      g.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      restart(g, live ?? g.startItem);
-      return;
-    }
-    if (!g) onSelect?.(null);
-  };
-
-  const onMove = (e: PointerEvent) => {
-    const g = gesture.current;
-    if (!g || !g.pointers.has(e.pointerId)) return;
-    g.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const rect = ref.current!.getBoundingClientRect();
-    const c0 = centroid(g.startPointers);
-    const c1 = centroid(g.pointers);
-    const next: ScrapItem = {
-      ...g.startItem,
-      x: clamp(g.startItem.x + (c1.x - c0.x) / rect.width, 0, 1),
-      y: clamp(g.startItem.y + (c1.y - c0.y) / rect.height, 0, 1)
-    };
-    if (g.pointers.size >= 2 && g.startPointers.size >= 2) {
-      const s0 = spread(g.startPointers);
-      const s1 = spread(g.pointers);
-      next.scale = clamp(g.startItem.scale * (s1.dist / Math.max(s0.dist, 1)), 0.3, 4);
-      next.rot = g.startItem.rot + (s1.angle - s0.angle);
-    }
-    setLive(next);
-  };
-
-  const onUp = (e: PointerEvent) => {
-    const g = gesture.current;
-    if (!g || !g.pointers.has(e.pointerId)) return;
-    g.pointers.delete(e.pointerId);
-    const current = live ?? g.startItem;
-    if (g.pointers.size === 0) {
-      gesture.current = null;
-      setLive(null);
-      onChange?.(layout.items.map((it) => (it.id === current.id ? current : it)));
-    } else {
-      restart(g, current);
-    }
-  };
+  const { shown, itemDown, handlers } = useItemGestures({ ref, items: layout.items, readOnly, onSelect, onChange, onTapEmpty });
 
   return (
-    <div
-      ref={ref}
-      class={`scrap-canvas pattern-${layout.pattern}`}
-      style={{ backgroundColor: layout.bg, containerType: 'inline-size' }}
-      onPointerDown={onCanvasDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerCancel={onUp}
-    >
-      {items.map((it) => (
+    <div ref={ref} class={`scrap-canvas pattern-${layout.pattern}`} style={{ backgroundColor: layout.bg, containerType: 'inline-size' }} {...handlers}>
+      {(layout.ink?.length || inkMode) && (
+        <div class="scrap-ink" style={{ pointerEvents: inkMode ? 'auto' : 'none' }}>
+          <InkSurface
+            strokes={layout.ink ?? []}
+            enabled={!!inkMode}
+            tool={inkMode?.tool ?? 'pen'}
+            color={inkMode?.color ?? '#000'}
+            size={inkMode?.size ?? 0.01}
+            onStroke={(s) => onInk?.([...(layout.ink ?? []), s])}
+          />
+        </div>
+      )}
+      {shown.map((it) => (
         <div
           key={it.id}
-          class={`scrap-item ${!readOnly && selected === it.id ? 'selected' : ''}`}
+          class={`scrap-item ${!readOnly && selected === it.id ? 'selected' : ''} ${it.kind === 'stamp' ? 'is-stamp' : ''}`}
           style={{
             left: `${it.x * 100}%`,
             top: `${it.y * 100}%`,
             transform: `translate(-50%, -50%) rotate(${it.rot}deg) scale(${it.scale})`,
             zIndex: it.z
           }}
-          onPointerDown={(e) => onItemDown(e as PointerEvent, it)}
+          onPointerDown={(e) => itemDown(e as PointerEvent, it)}
         >
           <ItemBody item={it} photos={photos} />
         </div>
@@ -149,10 +70,45 @@ export function ScrapCanvas({
   );
 }
 
-function ItemBody({ item, photos }: { item: ScrapItem; photos: Photo[] }) {
+let fontsReady = false;
+const fontWaiters = new Set<() => void>();
+if (typeof document !== 'undefined') {
+  Promise.all([document.fonts.load('800 40px Nunito'), document.fonts.load('600 40px Caveat')])
+    .catch(() => {})
+    .finally(() => {
+      fontsReady = true;
+      clearStampCache();
+      fontWaiters.forEach((fn) => fn());
+    });
+}
+
+/** A stamp picture; redrawn once the stamp fonts have loaded. */
+export function StampImg({ id, color, text, height = 220, class: cls = 'scrap-stamp' }: { id: string; color: string; text?: string; height?: number; class?: string }) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (fontsReady) return;
+    const fn = () => force((n) => n + 1);
+    fontWaiters.add(fn);
+    return () => fontWaiters.delete(fn);
+  }, []);
+  const def = STAMP_BY_ID[id];
+  return (
+    <img
+      class={cls}
+      src={stampUrl(id, color, text ?? '', height)}
+      alt={def?.label ?? 'cap'}
+      draggable={false}
+      style={cls === 'scrap-stamp' ? { width: `${26 * Math.sqrt(def?.aspect ?? 1)}cqw` } : undefined}
+    />
+  );
+}
+
+export function ItemBody({ item, photos }: { item: ScrapItem; photos: Photo[] }) {
   switch (item.kind) {
     case 'sticker':
       return <div class="scrap-sticker">{item.content}</div>;
+    case 'stamp':
+      return <StampImg id={item.content} color={item.color ?? '#D13A72'} text={item.text} />;
     case 'tape':
       return <div class="scrap-tape" style={{ backgroundColor: item.content }} />;
     case 'photo': {

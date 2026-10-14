@@ -39,7 +39,13 @@ const PATHS: Record<string, string> = {
   type: 'M5 6V4h14v2M12 4v16M9 20h6',
   shuffle: 'M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5',
   file: 'M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5',
-  grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'
+  grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+  pen: 'M15.5 4.5l4 4L9 19l-5 1 1-5zM13.5 6.5l4 4',
+  marker: 'M9 15l-4 4h5l2-2M9 15l7-7 4 4-7 7zM16 8l2-2 4 4-2 2',
+  eraser: 'M8 20h12M5.5 15.5l9-9a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 19H8.5l-3-3a.7.7 0 0 1 0-.5zM10 11l5 5',
+  undo: 'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3',
+  redo: 'M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3',
+  heart: 'M12 20s-7-4.4-9-9.1C1.7 7.6 4 4.5 7.3 4.5c2 0 3.6 1.1 4.7 2.7 1.1-1.6 2.7-2.7 4.7-2.7 3.3 0 5.6 3.1 4.3 6.4C19 15.6 12 20 12 20z'
 };
 
 export type IconName = keyof typeof PATHS;

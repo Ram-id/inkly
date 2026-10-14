@@ -10,20 +10,18 @@ export interface Mood {
   paper: string;
   /** deeper shade for the rolled edge, dots and small marks */
   edge: string;
-  /** short line shown under the colour in the bottle */
-  hint: string;
 }
 
 /** Paper colours. Identity is always also given by the label, never by colour alone. */
 export const MOODS: Mood[] = [
-  { id: 'senang', label: 'Senang', emoji: '😊', score: 5, paper: '#FFE48F', edge: '#E9B91F', hint: 'hati terasa ringan' },
-  { id: 'semangat', label: 'Semangat', emoji: '🤩', score: 5, paper: '#FFC49B', edge: '#EE8340', hint: 'penuh energi' },
-  { id: 'tenang', label: 'Tenang', emoji: '😌', score: 4, paper: '#C3EAD3', edge: '#4FAE7C', hint: 'damai & cukup' },
-  { id: 'rindu', label: 'Rindu', emoji: '🥺', score: 3, paper: '#FAC9DC', edge: '#E06C99', hint: 'kangen seseorang' },
-  { id: 'lelah', label: 'Lelah', emoji: '😮‍💨', score: 2, paper: '#E8DDCB', edge: '#B39468', hint: 'butuh istirahat' },
-  { id: 'cemas', label: 'Cemas', emoji: '😟', score: 2, paper: '#DCCFF6', edge: '#8C6FD6', hint: 'pikiran ramai' },
-  { id: 'sedih', label: 'Sedih', emoji: '😢', score: 1, paper: '#BFD8F7', edge: '#4F86D3', hint: 'hati sedang berat' },
-  { id: 'marah', label: 'Marah', emoji: '😠', score: 1, paper: '#F8B3AC', edge: '#D9534A', hint: 'emosi sedang naik' }
+  { id: 'senang', label: 'Senang', emoji: '😊', score: 5, paper: '#FFE48F', edge: '#E9B91F' },
+  { id: 'semangat', label: 'Semangat', emoji: '🤩', score: 5, paper: '#FFC49B', edge: '#EE8340' },
+  { id: 'tenang', label: 'Tenang', emoji: '😌', score: 4, paper: '#C3EAD3', edge: '#4FAE7C' },
+  { id: 'rindu', label: 'Rindu', emoji: '🥺', score: 3, paper: '#FAC9DC', edge: '#E06C99' },
+  { id: 'lelah', label: 'Lelah', emoji: '😮‍💨', score: 2, paper: '#E8DDCB', edge: '#B39468' },
+  { id: 'cemas', label: 'Cemas', emoji: '😟', score: 2, paper: '#DCCFF6', edge: '#8C6FD6' },
+  { id: 'sedih', label: 'Sedih', emoji: '😢', score: 1, paper: '#BFD8F7', edge: '#4F86D3' },
+  { id: 'marah', label: 'Marah', emoji: '😠', score: 1, paper: '#F8B3AC', edge: '#D9534A' }
 ];
 
 export const MOOD_BY_ID: Record<MoodId, Mood> = Object.fromEntries(MOODS.map((m) => [m.id, m])) as Record<
